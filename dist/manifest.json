@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Упрощение текста",
+  "version": "1.0.0",
+  "description": "Упрощение текста с помощью ИИ.",
+  "permissions": [
+    "tabs"
+  ],
+  "action": {
+    "default_title": "Упрощение текста",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+    "matches": ["https://*/*"],
+    "js": ["content-script.js"]
+    }
+  ]
+}
