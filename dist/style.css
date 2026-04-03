@@ -1,0 +1,22 @@
+.card {
+    width: 358px;
+    height: 520px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.card__name {
+    text-align: center;
+}
+
+.dropdown {
+    display: flex;
+    justify-content: center;
+}
+.btn {
+    margin-top: auto;
+    align-self:flex-start;
+    margin-bottom: 50px;
+}
