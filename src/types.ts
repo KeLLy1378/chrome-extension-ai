@@ -1,0 +1,1 @@
+export type Message = | {action: "SIMPLIFY_TEXT"} | {action: "RETURN_ORIGINAL_TEXT"}
