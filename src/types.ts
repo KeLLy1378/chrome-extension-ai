@@ -1,1 +1,2 @@
-export type Message = | {action: "SIMPLIFY_TEXT"} | {action: "RETURN_ORIGINAL_TEXT"}
+export type Message = | {action: "SIMPLIFY_TEXT", level: "easy" | "medium" | "hard"} 
+| {action: "RETURN_ORIGINAL_TEXT"}
