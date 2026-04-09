@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Упрощение текста</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,21 +13,19 @@
                 <h1 class="card__name">Упрощение текста</h1>
                 <p class="card__text">Уровень упрощения</p>
                 <div class="dropdown">
-                    <select name="Simplify level">
+                    <select id="levelSelect" name="Simplify level">
                         <option value="easy">Лёгкий</option>
                         <option value="medium">Средний</option>
                         <option value="hard">Сильный</option>
                     </select>
                 </div>
                 <div class="buttons"> 
-                    <button class="btn">Упростить</button>
-                    <button class="btn">Вернуть оригинал</button>
+                    <button class="btn" id="simplifyBtn">Упростить</button>
                 </div>
                 <div class="img">
                     <img src="Images/Vector.svg">
-                    
                 </div>
-
+                <div id="status"></div>
             </div>
         </div>
     </div>
