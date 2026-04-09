@@ -103,7 +103,7 @@ simplifyBtn?.addEventListener('click', () => {
                 statusDiv.textContent = 'Текст упрощается...';
                 statusDiv.style.color = 'green';
             }
-            console.log('Ответ от background:', response);
+            console.log('Ответ от background:', response.text);
         }
     });
 });
