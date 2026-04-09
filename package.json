@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/KeLLy1378/chrome-extension-ai#readme",
   "devDependencies": {
-    "@types/chrome": "^0.1.38",
+    "@types/chrome": "^0.1.40",
     "typescript": "^6.0.2"
   }
 }
