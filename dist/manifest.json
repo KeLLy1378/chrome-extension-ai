@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Адаптация сложности текста с помощью ИИ.",
   "permissions": [
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "action": {
     "default_title": "Адаптация сложности текста",
