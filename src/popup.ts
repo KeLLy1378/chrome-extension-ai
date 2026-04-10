@@ -14,7 +14,7 @@ async function saveLevelToStorage(level: "easy" | "medium" | "hard"): Promise<vo
 async function loadLevelFromStorage(): Promise<void> {
     const result = await chrome.storage.local.get('textComplexityLevel');
     if (result.textComplexityLevel) {
-        currentLevel = result.textComplexityLevel;
+        currentLevel = result.textComplexityLevel as "easy" | "medium" | "hard";
         if (levelSelect) levelSelect.value = currentLevel;
     } else {
         currentLevel = 'easy';
