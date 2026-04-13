@@ -1,7 +1,12 @@
 // src/popup.ts
+const returnOriginalText = {
+    action: "RETURN_ORIGINAL_TEXT"
+};
 let currentLevel = 'easy';
-const levelSelect = document.getElementById('levelSelect');
-const simplifyBtn = document.getElementById('simplifyBtn');
+const levelSelect = document.getElementById('levelSelect'); // as HTMLSelectElement, чтобы TS знал, что это элемент select
+const simplifyBtn = document.getElementById('simplifyBtn'); // as HTMLButtonElement, чтобы TS знал, что это элемент button
+const returnBtn = document.getElementById('returnBtn');
+returnBtn.disabled = false;
 async function saveLevelToStorage(level) {
     await chrome.storage.local.set({ textComplexityLevel: level });
 }
@@ -19,6 +24,14 @@ async function loadLevelFromStorage() {
         await saveLevelToStorage('easy');
     }
 }
+// функция для того чтобы сделать сообщение для упрощения текста даже если currentlevel меняется
+function createSimplifyMessage(currentLevel) {
+    return {
+        action: "SIMPLIFY_TEXT",
+        level: currentLevel
+    };
+}
+;
 if (levelSelect) {
     levelSelect.addEventListener('change', async (e) => {
         currentLevel = e.target.value;
@@ -26,8 +39,12 @@ if (levelSelect) {
         chrome.runtime.sendMessage({ action: "SIMPLIFY_TEXT", level: currentLevel }).catch(() => { });
     });
 }
-simplifyBtn?.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: "SIMPLIFY_TEXT", level: currentLevel }).catch(() => { });
+;
+simplifyBtn?.addEventListener("click", () => {
+    chrome.runtime.sendMessage(createSimplifyMessage(currentLevel));
+});
+returnBtn?.addEventListener("click", () => {
+    chrome.runtime.sendMessage(returnOriginalText);
 });
 loadLevelFromStorage();
 export {};

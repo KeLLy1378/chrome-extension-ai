@@ -26,6 +26,10 @@
     border-radius: 12px;
     font-size: 18px; 
     margin-bottom: 15px;
+    /* это чтобы нельзя было выделить текст конпки */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .buttons {
@@ -42,9 +46,21 @@
     font-size: 25px;
 }
 
-.btn:hover {
+.btn:enabled:hover {
     color: #A100FF;
     border-color: #A100FF;
+}
+
+.btn:enabled:active{
+    color: #FF8800;
+    border-color: #FF8800;
+}
+/* это чтобы кнопки не реагировали на наведение и нажатия, когда они отключены */
+.btn:disabled {
+    color: #444444;
+    border-color: #444444;
+    pointer-events: none;
+    cursor: not-allowed;
 }
 
 .img {
