@@ -11,7 +11,6 @@ let currentLevel: "easy" | "medium" | "hard" = 'easy';
 const levelSelect = document.getElementById('levelSelect') as HTMLSelectElement | null; // as HTMLSelectElement, чтобы TS знал, что это элемент select
 const simplifyBtn = document.getElementById('simplifyBtn') as HTMLButtonElement | null; // as HTMLButtonElement, чтобы TS знал, что это элемент button
 const returnBtn = document.getElementById('returnBtn') as HTMLButtonElement;
-returnBtn.disabled = false;
 
 async function saveLevelToStorage(level: "easy" | "medium" | "hard"): Promise<void> {
     await chrome.storage.local.set({ textComplexityLevel: level });
