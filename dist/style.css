@@ -17,7 +17,7 @@
 .dropdown {
     display: flex;
     justify-content: center;
-    margin-bottom: 50%;   
+    margin-bottom: 16px;   
 }
 .btn {
     cursor: pointer;
@@ -36,7 +36,7 @@
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 15px;   
+    margin-bottom: 30px;   
 }
 
 .card__text {
@@ -76,6 +76,34 @@
     width: 200px;
     text-align: center;
     font-size: 18px;
+}
+
+.api-key-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.api-key-field label {
+    font-size: 16px;
+    color: #FF8800;
+}
+
+.api-key-field input {
+    width: 240px;
+    height: 38px;
+    border: 1px solid #FF8800;
+    border-radius: 12px;
+    padding: 0 12px;
+    font-size: 16px;
+    color: #333333;
+    background: #ffffff;
+}
+
+.api-key-field input::placeholder {
+    color: #FF8800;
 }
 
 option {
