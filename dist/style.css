@@ -6,6 +6,7 @@
     padding: 20px;
     box-sizing: border-box;
     color: #FF8800;
+    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
 }
 
 .card__name {
@@ -61,6 +62,7 @@
     border-color: #444444;
     pointer-events: none;
     cursor: not-allowed;
+    background-color: #ffffff;
 }
 
 .img {
@@ -76,6 +78,7 @@
     width: 200px;
     text-align: center;
     font-size: 18px;
+    background: inherit;
 }
 
 .api-key-field {
@@ -99,7 +102,7 @@
     padding: 0 12px;
     font-size: 16px;
     color: #FF8800;
-    background: #ffffff;
+    background: inherit;
 }
 
 .api-key-field input[type="password"]:focus {
