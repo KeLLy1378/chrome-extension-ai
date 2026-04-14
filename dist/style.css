@@ -91,7 +91,7 @@
     color: #FF8800;
 }
 
-.api-key-field input {
+.api-key-field input[type="password"] {
     width: 240px;
     height: 38px;
     border: 1px solid #FF8800;
@@ -100,6 +100,22 @@
     font-size: 16px;
     color: #FF8800;
     background: #ffffff;
+}
+
+.api-key-field input[type="password"]:focus {
+    border-color: #FF8800;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
+}
+
+.api-key-checkbox {
+    width: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: #FF8800;
+    font-size: 14px;
+    gap: 8px;
 }
 
 .api-key-field input::placeholder {
