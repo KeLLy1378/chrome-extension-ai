@@ -31,6 +31,7 @@
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    background: #ffffff;
 }
 
 .buttons {
@@ -63,6 +64,7 @@
     pointer-events: none;
     cursor: not-allowed;
     background-color: #ffffff;
+    opacity: 50%;
 }
 
 .img {
@@ -73,12 +75,24 @@
 
 .dropdown select {
     color: #FF8800;
-    border-color: #FF8800;
+    border: 1px solid #FF8800;
     height: 40px;
     width: 200px;
     text-align: center;
     font-size: 18px;
     background: inherit;
+    border-radius: 12px;
+}
+
+.dropdown select:focus {
+    border-color: #FF8800;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
+}
+
+.dropdown select option {
+    background: inherit;
+    color: #FF8800;
 }
 
 .api-key-field {
@@ -127,4 +141,21 @@
 
 option {
     color: #FF8800;
+}
+
+.api-key-field input[type="text"] {
+    width: 240px;
+    height: 38px;
+    border: 1px solid #FF8800;
+    border-radius: 12px;
+    padding: 0 12px;
+    font-size: 16px;
+    color: #FF8800;
+    background: inherit;
+}
+
+.api-key-field input[type="text"]:focus {
+    border-color: #FF8800;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
 }
