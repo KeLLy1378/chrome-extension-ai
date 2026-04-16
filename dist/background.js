@@ -61,10 +61,6 @@ function getSelectedText(msg, callback) {
     });
 }
 ;
-// // функция чтобы посторить промт для groq в зависимости от уровня сложности
-// function buildPrompt(level: Level, text: string): string{
-//     return PROMTS[level].replace("{TEXT}", text);
-// }
 // принимаем сообщение с popup и выполняем нужный запрос
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "SIMPLIFY_TEXT") {
@@ -76,7 +72,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 console.log("Нет выделенного текста или текст состоит из одних пробелов");
                 return;
             }
-            if (text.trim() !== "") {
+            else {
                 GetSimplifiedText(message.level, text);
             }
         });

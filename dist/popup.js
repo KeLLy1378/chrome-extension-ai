@@ -10,7 +10,7 @@ const checkbox = document.getElementById('showApiKey');
 async function saveLevelToStorage(level) {
     await chrome.storage.local.set({ textComplexityLevel: level });
 }
-// показ api ключа при нажатии на чекбокс
+// показ или скрытие API ключа в зависимости от состояния чекбокса
 checkbox?.addEventListener('change', () => {
     const apiKeyInput = document.getElementById('apiKeyInput');
     if (apiKeyInput) {

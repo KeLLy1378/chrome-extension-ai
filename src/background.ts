@@ -1,7 +1,7 @@
 import type { Message } from "./types.js"; 
 import { GROQ_API } from "./config.js";
 import { PROMTS } from "./config.js";
-import type { Level } from "./config.js";
+import type { Level } from "./types.js";
 
 // определяем все нужные сообщения, которые будут отправляться
 const EnableButtonMessage: Message = {action: "ENABLE_BUTTON"};
@@ -52,7 +52,6 @@ async function GetSimplifiedText(level: Level, text: string){
     }
 };
 
-
 // функция получения текста со страницы
 function getSelectedText(msg: Message, callback: (text: string) => void) { // callback нужен для того, чтобы работать с текстом после его получения, так как получение текста асинхронное
     // отпрвка запроса в content-script для получения выделенного текста
@@ -68,12 +67,6 @@ function getSelectedText(msg: Message, callback: (text: string) => void) { // ca
     }
 )};
 
-
-// // функция чтобы посторить промт для groq в зависимости от уровня сложности
-// function buildPrompt(level: Level, text: string): string{
-//     return PROMTS[level].replace("{TEXT}", text);
-// }
-
 // принимаем сообщение с popup и выполняем нужный запрос
 chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
     if (message.action === "SIMPLIFY_TEXT") {
@@ -85,7 +78,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
                 console.log("Нет выделенного текста или текст состоит из одних пробелов");
                 return;
             }
-            if (text.trim() !== "") {
+            else {
                 GetSimplifiedText(message.level, text);
             }
         });
