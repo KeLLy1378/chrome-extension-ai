@@ -11,6 +11,21 @@ const simplifyBtn = document.getElementById('simplifyBtn');
 const statusDiv = document.getElementById('status');
 const apiKeyInput = document.getElementById('apiKeyInput') as HTMLInputElement | null;
 const showApiKeyCheckbox = document.getElementById('showApiKey') as HTMLInputElement | null;
+const infoBtn = document.getElementById('infoBtn') as HTMLButtonElement | null;
+const overlay = document.getElementById('overlay') as HTMLDivElement | null;
+const infoCloseBtn = document.getElementById('closeOverlay') as HTMLButtonElement | null;
+
+// Обработчик для кнопки информации
+infoBtn?.addEventListener('click', () => {
+    if (overlay != null){
+        overlay.classList.remove('hidden');
+    }
+});
+infoCloseBtn?.addEventListener('click', () => {
+    if (overlay != null){
+        overlay.classList.add('hidden');
+    }
+});
 
 // Функция сохранения уровня в storage
 async function saveLevelToStorage(level: "easy" | "medium" | "hard"): Promise<void> {

@@ -7,6 +7,20 @@ const simplifyBtn = document.getElementById('simplifyBtn');
 const statusDiv = document.getElementById('status');
 const apiKeyInput = document.getElementById('apiKeyInput');
 const showApiKeyCheckbox = document.getElementById('showApiKey');
+const infoBtn = document.getElementById('infoBtn');
+const overlay = document.getElementById('overlay');
+const infoCloseBtn = document.getElementById('closeOverlay');
+// Обработчик для кнопки информации
+infoBtn?.addEventListener('click', () => {
+    if (overlay != null) {
+        overlay.classList.remove('hidden');
+    }
+});
+infoCloseBtn?.addEventListener('click', () => {
+    if (overlay != null) {
+        overlay.classList.add('hidden');
+    }
+});
 // Функция сохранения уровня в storage
 async function saveLevelToStorage(level) {
     try {
