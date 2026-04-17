@@ -12,12 +12,24 @@
             <div class="card">
                 <h1 class="card__name">Упрощение текста</h1>
                 <p class="card__text">Уровень упрощения</p>
+
                 <div class="dropdown">
+                     <button id="infoBtn" class="info-btn" type="button">?</button>
                     <select id="levelSelect" name="Simplify level">
                         <option value="easy">Лёгкий</option>
                         <option value="medium">Средний</option>
                         <option value="hard">Сильный</option>
                     </select>
+                </div>
+
+                <div id="overlay" class="overlay hidden">
+                    <div class="modal">
+                        <h3>Уровни упрощения</h3>
+                        <p><strong>Лёгкий</strong> - текст почти как оригинал, но чуть яснее и чище</p>
+                        <p><strong>Средний</strong> - понятнее оригинала, но важные термины сохраняются</p>
+                        <p><strong>Сильный</strong> - максимально просто, почти без сложных терминов</p>
+                        <button id="closeOverlay">Закрыть</button>
+                    </div>
                 </div>
 
                 <div class="api-key-field">
