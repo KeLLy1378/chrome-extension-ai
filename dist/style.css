@@ -201,4 +201,18 @@ option {
     opacity: 50%;
     margin-right: 10px;
 
+} 
+
+.closeOverlay {
+    cursor: pointer;
+    color: #FF8800;
+    border-color: #FF8800;
+    border-radius: 12px;
+    font-size: 18px; 
+    margin-bottom: 15px;
+    /* это чтобы нельзя было выделить текст конпки */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background: #ffffff;
 }
