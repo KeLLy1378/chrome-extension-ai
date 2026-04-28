@@ -172,8 +172,6 @@ if (levelSelect) {
             statusDiv.textContent = `Выбран уровень: ${currentLevel} (сохранён)`;
             statusDiv.style.color = 'blue';
         }
-        const updateMessage = { action: "SIMPLIFY_TEXT", level: currentLevel };
-        chrome.runtime.sendMessage(updateMessage).catch(err => console.log('Фоновый процесс ещё не готов:', err));
     });
 }
 // Обработчик для кнопки упрощения текста
