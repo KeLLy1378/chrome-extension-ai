@@ -56,6 +56,9 @@ function getSelectedText(msg, callback) {
                 if (response != null && response.text != null) {
                     callback(response.text); // вызываем callback с полученным текстом
                 }
+                else {
+                    console.log("Нет ответа от content-script или в ответе нет текста");
+                }
             });
         }
     });
@@ -68,8 +71,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ text: "message from background" });
         getSelectedText(GetSelectedTextMessage, (text) => {
             //console.log("selected text: ", text);
-            if (text.trim() === "") { // проверка на случай если текст пустой или состоит из одних пробелов
-                console.log("Нет выделенного текста или текст состоит из одних пробелов");
+            if (text.trim() === "" || text == null) { // проверка на случай если текст пустой или состоит из одних пробелов
+                // console.log("Нет выделенного текста или текст состоит из одних пробелов");
                 return;
             }
             else {

@@ -1,0 +1,14 @@
+/* Стили для overlay элемента */
+#text-adaption-overlay {
+    position: absolute; /* для того чтобы позиционировать его относительно страницы */
+    display: none; /* по умолчанию скрыт */
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 10000; /* чтобы он был поверх всего */
+    cursor: pointer; /* чтобы было понятно что на него можно нажать */
+}
+
+/* Текст overlay задаётся в JS: текст кнопки/индикатора */

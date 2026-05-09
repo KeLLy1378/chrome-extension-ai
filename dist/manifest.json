@@ -18,7 +18,8 @@
   "content_scripts": [
     {
     "matches": ["https://*/*"],
-    "js": ["content-script.js"]
+    "js": ["content-script.js"],
+    "css": ["overlay.css"]
     }
   ]
 }
