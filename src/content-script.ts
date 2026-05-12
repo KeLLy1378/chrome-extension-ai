@@ -1,5 +1,8 @@
 console.log("Content script loaded");
 
+// локальное определение типа Level
+type Level = "easy" | "medium" | "hard";
+
 // глобальная переменная для overlay
 let overlay: HTMLDivElement | null = null;
 // глобальная переменная для хранения последнего выделенного текста
@@ -25,6 +28,16 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         sendResponse({text: text});
         return true; // важно для асинхронных операций
     }
+    if (message.action === "SIMPLIFY_RESULT") {
+        if (overlay) {
+            const resultBlock = overlay.querySelector("#result") as HTMLDivElement;
+            if (resultBlock) {
+                resultBlock.style.display = "block";
+                resultBlock.textContent = message.result;
+            }
+        }
+        return true;
+    }
 });
 
 // функция создания overlay 
@@ -38,6 +51,11 @@ function createOverlay(): HTMLDivElement {
         <div class="text-adapter-title">Адаптация текста</div>
 
         <div class="text-adapter-actions">
+            <select id="simplification-level">
+                <option value="easy">Легкий</option>
+                <option value="medium">Средний</option>
+                <option value="hard">Сложный</option>
+            </select>
             <button id="simplify-button" class="text-adapter-button primary">
                 Упростить
             </button>
@@ -58,6 +76,16 @@ function createOverlay(): HTMLDivElement {
     // добавляем overlay в body страницы
     document.body.appendChild(div);
 
+    // загружаем уровень из storage и устанавливаем по умолчанию
+    const select = div.querySelector('#simplification-level') as HTMLSelectElement;
+
+    chrome.storage.local.get('textComplexityLevel', (result) => {
+        const level: Level = (result.textComplexityLevel as Level) || 'easy';
+        if (select) {
+            select.value = level;
+        }
+    });
+
     // добавляем обработчики событий для кнопок и других элементов внутри overlay
     const simplifyButton = div.querySelector("#simplify-button");
     const closeButton = div.querySelector("#close-overlay-button");
@@ -75,6 +103,12 @@ function createOverlay(): HTMLDivElement {
                 return;
             }
 
+            const select = div.querySelector('#simplification-level') as HTMLSelectElement;
+            const level = select.value as Level;
+
+            // отправляем запрос на упрощение текста
+            chrome.runtime.sendMessage({ action: "SIMPLIFY_TEXT", level: level });
+
             // показываем окно с выделенным текстом
             if (selectedTextWindow instanceof HTMLDivElement) {
                 selectedTextWindow.style.display = "block";
@@ -85,10 +119,10 @@ function createOverlay(): HTMLDivElement {
                 selectedTextPreview.textContent = lastSelectedText;
             }
 
-            // показываем блок с результатом
+            // показываем блок с результатом с сообщением ожидания
             if (resultBlock instanceof HTMLDivElement) {
                 resultBlock.style.display = "block";
-                resultBlock.textContent = "Здесь позже будет результат упрощения текста через API.";
+                resultBlock.textContent = "Ожидание ответа от API...";
             }
         });
     }

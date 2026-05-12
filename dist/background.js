@@ -36,6 +36,7 @@ async function GetSimplifiedText(level, text) {
         });
         console.log("Status:", response.status);
         console.log("Groq error full:", errorJson);
+        return null;
     }
     else {
         // если всё хорошо то мы принимает данные и отправляем в console.log
@@ -43,6 +44,7 @@ async function GetSimplifiedText(level, text) {
         console.log(data);
         const text = data.choices[0].message.content; // по этому пути мы можем получить текст ответа от groq
         console.log(text);
+        return text;
     }
 }
 ;
@@ -65,18 +67,22 @@ function getSelectedText(msg, callback) {
 }
 ;
 // принимаем сообщение с popup и выполняем нужный запрос
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.action === "SIMPLIFY_TEXT") {
         console.log('Получено сообщение для упрощения текста с уровнем:', message.level);
         sendResponse({ text: "message from background" });
-        getSelectedText(GetSelectedTextMessage, (text) => {
+        getSelectedText(GetSelectedTextMessage, async (text) => {
             //console.log("selected text: ", text);
             if (text.trim() === "" || text == null) { // проверка на случай если текст пустой или состоит из одних пробелов
                 // console.log("Нет выделенного текста или текст состоит из одних пробелов");
                 return;
             }
             else {
-                GetSimplifiedText(message.level, text);
+                const simplifiedText = await GetSimplifiedText(message.level, text);
+                // отправляем результат обратно в content-script
+                if (simplifiedText && sender.tab && sender.tab.id) {
+                    chrome.tabs.sendMessage(sender.tab.id, { action: "SIMPLIFY_RESULT", result: simplifiedText });
+                }
             }
         });
     }

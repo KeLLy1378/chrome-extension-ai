@@ -2,6 +2,7 @@
 
 export type Message = 
     | { action: "SIMPLIFY_TEXT", level: Level, apiKey?: string }  // Добавляем apiKey (опциональный)
+    | { action: "SIMPLIFY_RESULT", result: string }
     | { action: "RETURN_ORIGINAL_TEXT" }
     | { action: "GET_SELECTED_TEXT" }
     | { action: "ENABLE_BUTTON" }
