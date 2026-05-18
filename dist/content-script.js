@@ -17,6 +17,7 @@ async function getSelectedText() {
     else {
         const text = selected.toString();
         console.log(text);
+        console.log("Кол-во символов в выделенном тексте:", text.length);
         return text;
     }
 }
@@ -83,10 +84,14 @@ function createOverlay() {
             if (!lastSelectedText) {
                 return;
             }
+            if (lastSelectedText.trim().length < 200) {
+                alert("Пожалуйста, выделите текст длиной не менее 200 символов для упрощения.");
+                return;
+            }
             const select = div.querySelector("#simplification-level");
             const level = select.value;
             showChatOverlay();
-            appendMessage("user", lastSelectedText);
+            appendMessage("user", `Упрости выделенный текст (уровень упрощения: ${level}): ${lastSelectedText}`);
             appendMessage("assistant", "Генерируем ответ...");
             chrome.runtime.sendMessage({
                 action: "SIMPLIFY_TEXT",

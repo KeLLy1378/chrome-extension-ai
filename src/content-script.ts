@@ -31,6 +31,7 @@ async function getSelectedText(): Promise<string | null> {
     } else {
         const text = selected.toString();
         console.log(text);
+        console.log("Кол-во символов в выделенном тексте:", text.length);
         return text;
     }
 }
@@ -109,6 +110,11 @@ function createOverlay(): HTMLDivElement {
         if (!lastSelectedText) {
             return;
         }
+        
+        if (lastSelectedText.trim().length < 200) {
+            alert("Пожалуйста, выделите текст длиной не менее 200 символов для упрощения.");
+            return;
+        }
 
         const select =
             div.querySelector(
@@ -121,7 +127,7 @@ function createOverlay(): HTMLDivElement {
 
         appendMessage(
             "user",
-            lastSelectedText
+            `Упрости выделенный текст (уровень упрощения: ${level}): ${lastSelectedText}`
         );
 
         appendMessage(
