@@ -273,3 +273,41 @@
     opacity: 1;
     /* становится полностью непрозрачной (100%) */
 }
+
+/* Preview helper classes для overlay.html */
+.preview-open {
+    position: static !important;
+    display: inline-block !important;
+    width: auto !important;
+    max-width: 600px !important;
+}
+
+.preview-flex {
+    display: flex !important;
+}
+
+.preview-chat-row {
+    display: flex !important;
+    gap: 18px !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+}
+
+.preview-chat-button {
+    position: static !important;
+    margin: 18px 0 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 12px 22px !important;
+    font-size: 18px !important;
+}
+
+.preview-chat-overlay {
+    position: static !important;
+    display: flex !important;
+    width: 420px !important;
+    height: 360px !important;
+    flex-direction: column !important;
+    margin-top: 18px !important;
+}
+
