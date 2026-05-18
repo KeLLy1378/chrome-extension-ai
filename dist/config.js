@@ -1,4 +1,3 @@
-export const GROQ_API = "api_key";
 export const PROMTS = {
     easy: `
 Ты редактор текста.

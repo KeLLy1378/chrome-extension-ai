@@ -1,6 +1,8 @@
-export const GROQ_API = "api_key";
-export const PROMTS = {
-    easy: `
+export const GROQ_API = "###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###";
+import type { Level } from "./types";
+
+export const PROMTS: Record<Level, string> = { // record создаёт объект с ключами типа Level и значениями типа string
+easy: `
 Ты редактор текста.
 
 Слегка адаптируй текст:
@@ -22,7 +24,7 @@ export const PROMTS = {
 
 Верни только итоговый текст.
 `,
-    medium: `
+medium: `
 Ты редактор текста.
 
 Адаптируй текст до среднего уровня сложности:
@@ -43,7 +45,7 @@ export const PROMTS = {
 
 Верни только итоговый адаптированный текст.
 `,
-    hard: `
+hard: `
 Ты редактор текста.
 
 Сильно упрости текст:
@@ -64,5 +66,4 @@ export const PROMTS = {
 - писать "Вот упрощённый текст"
 
 Верни только итоговый текст.
-`,
-};
+`,};
