@@ -1,4 +1,3 @@
-import { GROQ_API } from "./config.js";
 import { PROMTS } from "./config.js";
 // определяем все нужные сообщения, которые будут отправляться
 const EnableButtonMessage = { action: "ENABLE_BUTTON" };
@@ -8,11 +7,12 @@ let returnTextEnabled = false; // переменная для отслежива
 // функция для отправки сообщения Groq для упрощения текста
 async function GetSimplifiedText(level, text) {
     const promt = PROMTS[level];
+    const apiGroqKey = await chrome.storage.local.get('apiKey');
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: "POST", // метод POST означает что мы отправляем запрос на сервер, а не просто получаем данные
         headers: {
             'Content-Type': 'application/json', // тут мы говорим что используем json в теле запроса
-            'Authorization': `Bearer ${GROQ_API}` // через это мы передаём наш API ключ
+            'Authorization': `Bearer ${apiGroqKey.apiKey}` // через это мы передаём наш API ключ
         },
         body: JSON.stringify({
             model: 'llama-3.1-8b-instant',
@@ -66,28 +66,24 @@ function getSelectedText(msg, callback) {
     });
 }
 ;
-// принимаем сообщение с popup и выполняем нужный запрос
+// принимаем сообщение с content script и выполняем нужный запрос
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.action === "SIMPLIFY_TEXT") {
-        console.log('Получено сообщение для упрощения текста с уровнем:', message.level);
-        sendResponse({ text: "message from background" });
-        getSelectedText(GetSelectedTextMessage, async (text) => {
-            //console.log("selected text: ", text);
-            if (text.trim() === "" || text == null) { // проверка на случай если текст пустой или состоит из одних пробелов
-                // console.log("Нет выделенного текста или текст состоит из одних пробелов");
-                return;
-            }
-            else {
-                const simplifiedText = await GetSimplifiedText(message.level, text);
-                // отправляем результат обратно в content-script
-                if (simplifiedText && sender.tab && sender.tab.id) {
-                    chrome.tabs.sendMessage(sender.tab.id, { action: "SIMPLIFY_RESULT", result: simplifiedText });
-                }
-            }
-        });
-    }
-    if (message.action === "RETURN_ORIGINAL_TEXT") {
-        console.log('Получено сообщение для возврата оригинального текста');
-        sendResponse({ text: "message from background" });
+        try {
+            console.log("Получен запрос на упрощение");
+            const simplifiedText = await GetSimplifiedText(message.level, message.text);
+            sendResponse({
+                success: true,
+                result: simplifiedText
+            });
+        }
+        catch (error) {
+            console.error(error);
+            sendResponse({
+                success: false,
+                error: "Ошибка API"
+            });
+        }
+        return true;
     }
 });

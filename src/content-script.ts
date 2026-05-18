@@ -1,5 +1,16 @@
 console.log("Content script loaded");
 
+// тип сообщений Message
+type Message = 
+    | { action: "SIMPLIFY_TEXT", level: Level, apiKey?: string }  // Добавляем apiKey (опциональный)
+    | { action: "SIMPLIFY_RESULT", result: string }
+    | { action: "RETURN_ORIGINAL_TEXT" }
+    | { action: "GET_SELECTED_TEXT" }
+    | { action: "ENABLE_BUTTON" }
+    | { action: "DISABLE_BUTTON" }
+    | { action: "UPDATE_API_KEY", apiKey: string }  // Добавляем новый тип для обновления ключа
+    | { action: "GET_API_KEY" };  // Опционально
+
 // локальное определение типа Level
 type Level = "easy" | "medium" | "hard";
 
@@ -7,6 +18,9 @@ type Level = "easy" | "medium" | "hard";
 let overlay: HTMLDivElement | null = null;
 // глобальная переменная для хранения последнего выделенного текста
 let lastSelectedText: string | null = null;
+let chatOverlay: HTMLDivElement | null = null;
+// создадим html элемент по нажатию на который будет появляться chatOverlay
+let chatIconButton: HTMLButtonElement | null = null;
 
 // функция получения выделенного текста на странице
 async function getSelectedText(): Promise<string | null> {
@@ -40,6 +54,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
 });
 
+
 // функция создания overlay 
 function createOverlay(): HTMLDivElement {
     // создаём div для нашего overlay
@@ -52,9 +67,9 @@ function createOverlay(): HTMLDivElement {
 
         <div class="text-adapter-actions">
             <select id="simplification-level">
-                <option value="easy">Легкий</option>
-                <option value="medium">Средний</option>
-                <option value="hard">Сложный</option>
+                <option value="easy">Легкое упрощение</option>
+                <option value="medium">Среднее упрощение</option>
+                <option value="hard">Сильное упрощение</option>
             </select>
             <button id="simplify-button" class="text-adapter-button primary">
                 Упростить
@@ -64,13 +79,6 @@ function createOverlay(): HTMLDivElement {
                 Закрыть
             </button>
         </div>
-
-        <div id="selected-text-window" class="text-adapter-selected-window">
-            <div class="text-adapter-label">Выделенный фрагмент:</div>
-            <div id="selected-text-preview" class="text-adapter-preview"></div>
-        </div>
-
-        <div id="result" class="text-adapter-result"></div>
     `;
 
     // добавляем overlay в body страницы
@@ -89,43 +97,77 @@ function createOverlay(): HTMLDivElement {
     // добавляем обработчики событий для кнопок и других элементов внутри overlay
     const simplifyButton = div.querySelector("#simplify-button");
     const closeButton = div.querySelector("#close-overlay-button");
-    const selectedTextWindow = div.querySelector("#selected-text-window");
-    const selectedTextPreview = div.querySelector("#selected-text-preview");
-    const resultBlock = div.querySelector("#result");
 
+    // обработчик кнопки упрощения текста
     if (simplifyButton instanceof HTMLButtonElement) {
-        simplifyButton.addEventListener("click", (event) => {
-            // останавливаем всплытие события, чтобы не сработал обработчик на document для скрытия overlay
-            event.stopPropagation();
 
-            if (!lastSelectedText) {
-                console.log("Нет сохранённого выделенного текста");
-                return;
+    simplifyButton.addEventListener("click", async (event) => {
+
+        event.stopPropagation();
+
+        if (!lastSelectedText) {
+            return;
+        }
+
+        const select =
+            div.querySelector(
+                "#simplification-level"
+            ) as HTMLSelectElement;
+
+        const level = select.value as Level;
+
+        showChatOverlay();
+
+        appendMessage(
+            "user",
+            lastSelectedText
+        );
+
+        appendMessage(
+            "assistant",
+            "Генерируем ответ..."
+        );
+
+        chrome.runtime.sendMessage(
+            {
+                action: "SIMPLIFY_TEXT",
+
+                text: lastSelectedText,
+
+                level: level
+            },
+
+            (response) => {
+
+                if (!response) {
+
+                    appendMessage(
+                        "assistant",
+                        "Нет ответа от background???"
+                    );
+
+                    return;
+                }
+
+                if (response.success) {
+
+                    appendMessage(
+                        "assistant",
+                        response.result
+                    );
+
+                } else {
+
+                    appendMessage(
+                        "assistant",
+                        `Ошибка:
+${response.error}`
+                    );
+                }
             }
-
-            const select = div.querySelector('#simplification-level') as HTMLSelectElement;
-            const level = select.value as Level;
-
-            // отправляем запрос на упрощение текста
-            chrome.runtime.sendMessage({ action: "SIMPLIFY_TEXT", level: level });
-
-            // показываем окно с выделенным текстом
-            if (selectedTextWindow instanceof HTMLDivElement) {
-                selectedTextWindow.style.display = "block";
-            }
-
-            // заполняем превью выделенного текста
-            if (selectedTextPreview instanceof HTMLDivElement) {
-                selectedTextPreview.textContent = lastSelectedText;
-            }
-
-            // показываем блок с результатом с сообщением ожидания
-            if (resultBlock instanceof HTMLDivElement) {
-                resultBlock.style.display = "block";
-                resultBlock.textContent = "Ожидание ответа от API...";
-            }
-        });
-    }
+        );
+    });
+}
 
     if (closeButton instanceof HTMLButtonElement) {
         closeButton.addEventListener("click", (event) => {
@@ -227,3 +269,130 @@ document.addEventListener("mouseup", (event) => {
         showOverlayNearSelection();
     }, 100);
 });
+
+
+
+// фукнция chatOverlay для ответа от ИИ
+
+function createChatOverlay(): HTMLDivElement {
+    const div = document.createElement("div");
+
+    div.id = "ai-chat-overlay";
+
+    div.innerHTML = `
+        <div class="ai-chat-header">
+            <span>Чат</span>
+
+            <button id="close-chat-overlay">
+                ✕
+            </button>
+        </div>
+
+        <div id="ai-chat-messages" class="ai-chat-messages"></div>
+
+        <div class="ai-chat-input-container">
+            <input 
+                id="ai-chat-input"
+                type="text"
+                placeholder="Напишите сообщение..."
+            />
+
+            <button id="send-chat-message">
+                Отправить
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(div);
+
+    const closeButton = div.querySelector("#close-chat-overlay");
+
+    if (closeButton instanceof HTMLButtonElement) {
+        closeButton.addEventListener("click", () => {
+            div.style.display = "none";
+        });
+    }
+
+    return div;
+}
+
+// функция показа chatOverlay
+
+function showChatOverlay(): void {
+    if (!chatOverlay) {
+        chatOverlay = createChatOverlay();
+    }
+
+    chatOverlay.style.display = "flex";
+}
+
+// функция добавления сообщения в chatOverlay
+
+function appendMessage(
+    role: "user" | "assistant",
+    text: string
+): void {
+
+    if (!chatOverlay) {
+        return;
+    }
+
+    const messagesContainer = chatOverlay.querySelector("#ai-chat-messages");
+
+    if (!(messagesContainer instanceof HTMLDivElement)) {
+        return;
+    }
+
+    const message = document.createElement("div");
+
+    message.classList.add("ai-chat-message");
+    message.classList.add(role);
+
+    message.textContent = text;
+
+    messagesContainer.appendChild(message);
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+
+// функция создания иконки для открытия chatOverlay
+
+function createChatIconButton(): HTMLButtonElement {
+
+    const button = document.createElement("button");
+
+    button.id = "ai-chat-floating-button";
+
+    button.innerHTML = "Chat";
+
+    button.addEventListener("click", (event) => {
+
+        event.stopPropagation();
+
+        toggleChatOverlay();
+    });
+
+    document.body.appendChild(button);
+
+    return button;
+}
+
+function toggleChatOverlay(): void {
+
+    if (!chatOverlay) {
+        showChatOverlay();
+        return;
+    }
+
+    const isVisible = chatOverlay.style.display === "flex";
+
+    if (isVisible) {
+        chatOverlay.style.display = "none";
+    } else {
+        chatOverlay.style.display = "flex";
+    }
+}
+
+// инициализация кнопки для открытия chatOverlay при загрузке страницы
+chatIconButton = createChatIconButton();
