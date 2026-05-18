@@ -74,40 +74,30 @@ function getSelectedText(msg: Message, callback: (text: string) => void) { // ca
 )};
 
 // принимаем сообщение с content script и выполняем нужный запрос
-chrome.runtime.onMessage.addListener(
-
-    async (message, sender, sendResponse) => {
-
-        if (message.action === "SIMPLIFY_TEXT") {
-
-            try {
-
-                console.log(
-                    "Получен запрос на упрощение"
-                );
-
-                const simplifiedText =
-                    await GetSimplifiedText(
-                        message.level,
-                        message.text
-                    );
-
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "SIMPLIFY_TEXT") {
+        try {
+            console.log("Получен запрос на упрощение");
+            
+            GetSimplifiedText(message.level, message.text).then((simplifiedText) => {
                 sendResponse({
                     success: true,
                     result: simplifiedText
                 });
-
-            } catch (error) {
-
+            }).catch((error) => {
                 console.error(error);
-
                 sendResponse({
                     success: false,
                     error: "Ошибка API"
                 });
-            }
-
-            return true;
+            });
+        } catch (error) {
+            console.error(error);
+            sendResponse({
+                success: false,
+                error: "Ошибка API"
+            });
         }
+        return true;
     }
-);
+});

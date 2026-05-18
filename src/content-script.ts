@@ -36,10 +36,11 @@ async function getSelectedText(): Promise<string | null> {
 }
 
 // обработчик сообщений от background script
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "GET_SELECTED_TEXT") {
-        const text = await getSelectedText();
-        sendResponse({text: text});
+        getSelectedText().then(text => {
+            sendResponse({text: text});
+        });
         return true; // важно для асинхронных операций
     }
     if (message.action === "SIMPLIFY_RESULT") {
