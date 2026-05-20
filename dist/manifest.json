@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Адаптация сложности текста",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Адаптация сложности текста с помощью ИИ.",
   "permissions": [
     "tabs",
