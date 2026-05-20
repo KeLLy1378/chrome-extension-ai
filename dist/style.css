@@ -216,3 +216,28 @@ option {
     user-select: none;
     background: #ffffff;
 }
+
+#extension-version-badge {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    background: rgba(17, 24, 39, 0.88);
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    z-index: 1001;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    max-width: calc(100% - 24px);
+}
+
+@media (max-width: 360px) {
+    #extension-version-badge {
+        display: none;
+    }
+}

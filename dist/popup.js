@@ -10,6 +10,7 @@ const showApiKeyCheckbox = document.getElementById('showApiKey');
 const infoBtn = document.getElementById('infoBtn');
 const overlay = document.getElementById('overlay');
 const infoCloseBtn = document.getElementById('closeOverlay');
+const versionBadge = document.getElementById('extension-version-badge');
 // Обработчик для кнопки информации
 infoBtn?.addEventListener('click', () => {
     if (overlay != null) {
@@ -216,6 +217,21 @@ async function initializePopup() {
     await loadApiKeyFromStorage();
     setupApiKeyTracking();
     setupShowApiKeyToggle();
+    setVersionBadge();
+}
+
+function setVersionBadge() {
+    if (!versionBadge) {
+        return;
+    }
+    try {
+        const manifest = chrome.runtime.getManifest();
+        const version = manifest?.version || 'unknown';
+        versionBadge.textContent = `v${version} — beta test`;
+    }
+    catch (error) {
+        console.warn('[Popup] Не удалось получить версию расширения', error);
+    }
 }
 // Инициализируем popup
 initializePopup();
