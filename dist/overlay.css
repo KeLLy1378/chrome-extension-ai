@@ -32,6 +32,18 @@
     /* указатель мыши меняется на "рука" - пользователь понимает, что это кликабельно */
 }
 
+#text-adaption-overlay .text-adapter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+#text-adaption-overlay .text-adapter-actions select,
+#text-adaption-overlay .text-adapter-actions .text-adapter-button {
+    margin: 0;
+}
+
 
 /* ========================================
    ЧАТЕ OVERLAY (БОКОВАЯ ПАНЕЛЬ С ОТВЕТАМИ ИИ)
@@ -103,6 +115,8 @@ button#close-chat-overlay {
     justify-content: center;
     color: black;    
 }
+
+
 
 
 /* ========================================
@@ -236,18 +250,18 @@ button#close-chat-overlay {
     bottom: 70%;
     /* позиция: 24px от правого края, примерно посередине высоты */
     
-    width: 100px;
+    width: 56px;
     height: 56px;
     /* размер: 100px ширина, 56px высота */
     
-    border-radius: 15%;
+    border-radius: 60%;
     /* слегка скруглённые углы */
     
     border: none;
     /* без границы */
     
-    background: #2563eb;
-    /* синий фон (как и сообщения пользователя) */
+    background: #FF8800;
+    /* оранжевый фон (как и сообщения пользователя) */
     
     color: white;
     /* белый текст "Chat" */
