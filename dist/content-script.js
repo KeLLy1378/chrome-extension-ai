@@ -5,8 +5,45 @@ let overlay = null;
 // глобальная переменная для хранения последнего выделенного текста
 let lastSelectedText = null;
 let chatOverlay = null;
-// создадим html элемент по нажатию на который будет появляться chatOverlay
+let chatOverlayShadow = null;
 let chatIconButton = null;
+// Shadow host и root для всего UI расширения
+let extensionHost = null;
+let shadowRootRef = null;
+const overlayCssUrl = chrome.runtime.getURL('overlay.css');
+// Инициализация единого Shadow Root для всего UI расширения
+async function initializeShadowRoot() {
+    if (shadowRootRef)
+        return shadowRootRef;
+    if (!document.body) {
+        await new Promise((resolve) => {
+            window.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
+        });
+    }
+    extensionHost = document.createElement('div');
+    extensionHost.id = 'extension-ui-host';
+    extensionHost.style.position = 'absolute';
+    extensionHost.style.left = '0';
+    extensionHost.style.top = '0';
+    extensionHost.style.zIndex = '2147483647';
+    document.body.appendChild(extensionHost);
+    const shadow = extensionHost.attachShadow({ mode: 'open' });
+    // загрузка overlay.css и вставка в shadow root как <style>
+    try {
+        const cssUrl = overlayCssUrl;
+        const res = await fetch(cssUrl);
+        const css = await res.text();
+        const style = document.createElement('style');
+        style.textContent = css;
+        shadow.appendChild(style);
+    }
+    catch (err) {
+        // при ошибке загрузки CSS — продолжим без него
+        console.warn('Не удалось загрузить overlay.css into ShadowRoot', err);
+    }
+    shadowRootRef = shadow;
+    return shadowRootRef;
+}
 // функция получения выделенного текста на странице
 async function getSelectedText() {
     let selected = window.getSelection();
@@ -30,21 +67,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // важно для асинхронных операций
     }
     if (message.action === "SIMPLIFY_RESULT") {
-        if (overlay) {
-            const resultBlock = overlay.querySelector("#result");
-            if (resultBlock) {
-                resultBlock.style.display = "block";
-                resultBlock.textContent = message.result;
-            }
+        const resultBlock = shadowRootRef?.querySelector("#result");
+        if (resultBlock) {
+            resultBlock.style.display = "block";
+            resultBlock.textContent = message.result;
         }
         return true;
     }
 });
 // функция создания overlay 
-function createOverlay() {
-    // создаём div для нашего overlay
-    const div = document.createElement("div");
-    div.id = "text-adaption-overlay";
+async function createOverlay() {
+    await initializeShadowRoot();
+    // создаём div для нашего overlay внутри ShadowRoot
+    const div = document.createElement('div');
+    div.id = 'text-adaption-overlay';
     // устанавливаем HTML структуру overlay
     div.innerHTML = `
         <div class="text-adapter-title">Адаптация текста</div>
@@ -63,9 +99,12 @@ function createOverlay() {
                 Закрыть
             </button>
         </div>
+        <div id="result" style="display:none"></div>
     `;
-    // добавляем overlay в body страницы
-    document.body.appendChild(div);
+    // добавляем overlay в shadow root
+    shadowRootRef?.appendChild(div);
+    // сохраняем ссылку
+    overlay = div;
     // загружаем уровень из storage и устанавливаем по умолчанию
     const select = div.querySelector('#simplification-level');
     chrome.storage.local.get('textComplexityLevel', (result) => {
@@ -75,45 +114,44 @@ function createOverlay() {
         }
     });
     // добавляем обработчики событий для кнопок и других элементов внутри overlay
-    const simplifyButton = div.querySelector("#simplify-button");
-    const closeButton = div.querySelector("#close-overlay-button");
-    // обработчик кнопки упрощения текста
+    const simplifyButton = div.querySelector('#simplify-button');
+    const closeButton = div.querySelector('#close-overlay-button');
     if (simplifyButton instanceof HTMLButtonElement) {
-        simplifyButton.addEventListener("click", async (event) => {
+        simplifyButton.addEventListener('click', async (event) => {
             event.stopPropagation();
             if (!lastSelectedText) {
                 return;
             }
             if (lastSelectedText.trim().length < 200) {
-                alert("Пожалуйста, выделите текст длиной не менее 200 символов для упрощения.");
+                alert('Пожалуйста, выделите текст длиной не менее 200 символов для упрощения.');
                 return;
             }
-            const select = div.querySelector("#simplification-level");
-            const level = select.value;
-            showChatOverlay();
-            appendMessage("user", `Упрости выделенный текст (уровень упрощения: ${level}): ${lastSelectedText}`);
-            appendMessage("assistant", "Генерируем ответ...");
+            const selectElement = div.querySelector('#simplification-level');
+            const level = selectElement.value;
+            // дождёмся, чтобы chatOverlay гарантированно существовал в ShadowRoot
+            await showChatOverlay();
+            appendMessage('user', `Упрости выделенный текст (уровень упрощения: ${level}): ${lastSelectedText}`);
+            appendMessage('assistant', 'Генерируем ответ...');
             chrome.runtime.sendMessage({
-                action: "SIMPLIFY_TEXT",
+                action: 'SIMPLIFY_TEXT',
                 text: lastSelectedText,
                 level: level
             }, (response) => {
                 if (!response) {
-                    appendMessage("assistant", "Нет ответа от background???");
+                    appendMessage('assistant', 'Нет ответа от background???');
                     return;
                 }
                 if (response.success) {
-                    appendMessage("assistant", response.result);
+                    appendMessage('assistant', response.result);
                 }
                 else {
-                    appendMessage("assistant", `Ошибка:
-${response.error}`);
+                    appendMessage('assistant', `Ошибка:\n${response.error}`);
                 }
             });
         });
     }
     if (closeButton instanceof HTMLButtonElement) {
-        closeButton.addEventListener("click", (event) => {
+        closeButton.addEventListener('click', (event) => {
             event.stopPropagation();
             hideOverlay();
         });
@@ -121,28 +159,30 @@ ${response.error}`);
     return div;
 }
 // функция показа overlay
-function showOverlay(x, y) {
+async function showOverlay(x, y) {
     if (!overlay) {
-        overlay = createOverlay();
+        overlay = await createOverlay();
     }
+    if (!overlay)
+        return;
     // добавляем небольшой отступ от курсора
     const offset = 10;
     overlay.style.left = `${x + offset}px`;
     overlay.style.top = `${y + offset}px`;
-    overlay.style.display = "block";
-    // сбрасываем состояние элементов overlay
-    const selectedTextWindow = overlay.querySelector("#selected-text-window");
-    const selectedTextPreview = overlay.querySelector("#selected-text-preview");
-    const resultBlock = overlay.querySelector("#result");
+    overlay.style.display = 'block';
+    // сбрасываем состояние элементов overlay (внутри shadow root)
+    const selectedTextWindow = shadowRootRef?.querySelector('#selected-text-window');
+    const selectedTextPreview = shadowRootRef?.querySelector('#selected-text-preview');
+    const resultBlock = shadowRootRef?.querySelector('#result');
     if (selectedTextWindow instanceof HTMLDivElement) {
-        selectedTextWindow.style.display = "none";
+        selectedTextWindow.style.display = 'none';
     }
     if (selectedTextPreview instanceof HTMLDivElement) {
-        selectedTextPreview.textContent = "";
+        selectedTextPreview.textContent = '';
     }
     if (resultBlock instanceof HTMLDivElement) {
-        resultBlock.style.display = "none";
-        resultBlock.textContent = "";
+        resultBlock.style.display = 'none';
+        resultBlock.textContent = '';
     }
 }
 // функция скрытия overlay
@@ -164,7 +204,7 @@ function getSelectionCoords() {
     return coords;
 }
 // функция для показа overlay при выделении текста рядом с ним
-function showOverlayNearSelection() {
+async function showOverlayNearSelection() {
     const coords = getSelectionCoords();
     if (!coords) {
         hideOverlay();
@@ -173,12 +213,12 @@ function showOverlayNearSelection() {
     // рассчитываем позицию overlay с учётом скролла
     const x = coords.left + window.scrollX;
     const y = coords.bottom + window.scrollY + 8;
-    showOverlay(x, y);
+    await showOverlay(x, y);
 }
 // обработчик события mouseup для показа overlay при выделении текста
-document.addEventListener("mouseup", (event) => {
-    // если клик был внутри overlay, игнорируем
-    if (overlay && event.target instanceof Node && overlay.contains(event.target)) {
+document.addEventListener('mouseup', (event) => {
+    // если клик был внутри extensionHost, игнорируем
+    if (extensionHost && event.composedPath().includes(extensionHost)) {
         return;
     }
     // используем setTimeout для того, чтобы selection успел обновиться после mouseup
@@ -189,13 +229,14 @@ document.addEventListener("mouseup", (event) => {
             return;
         }
         lastSelectedText = text;
-        showOverlayNearSelection();
+        await showOverlayNearSelection();
     }, 100);
 });
 // фукнция chatOverlay для ответа от ИИ
-function createChatOverlay() {
-    const div = document.createElement("div");
-    div.id = "ai-chat-overlay";
+async function createChatOverlay() {
+    await initializeShadowRoot();
+    const div = document.createElement('div');
+    div.id = 'ai-chat-overlay';
     div.innerHTML = `
         <div class="ai-chat-header">
             <span>Чат</span>
@@ -219,62 +260,87 @@ function createChatOverlay() {
             </button>
         </div>
     `;
-    document.body.appendChild(div);
-    const closeButton = div.querySelector("#close-chat-overlay");
+    shadowRootRef?.appendChild(div);
+    const closeButton = div.querySelector('#close-chat-overlay');
     if (closeButton instanceof HTMLButtonElement) {
-        closeButton.addEventListener("click", () => {
-            div.style.display = "none";
+        closeButton.addEventListener('click', () => {
+            div.style.display = 'none';
         });
     }
+    const sendButton = div.querySelector('#send-chat-message');
+    const input = div.querySelector('#ai-chat-input');
+    if (sendButton instanceof HTMLButtonElement && input) {
+        sendButton.addEventListener('click', () => {
+            const text = input.value.trim();
+            if (!text)
+                return;
+            appendMessage('user', text);
+            input.value = '';
+            // отправляем на background если нужно
+            chrome.runtime.sendMessage({ action: 'CHAT_MESSAGE', text });
+        });
+    }
+    chatOverlay = div;
     return div;
 }
 // функция показа chatOverlay
-function showChatOverlay() {
+async function showChatOverlay() {
     if (!chatOverlay) {
-        chatOverlay = createChatOverlay();
+        chatOverlay = await createChatOverlay();
     }
-    chatOverlay.style.display = "flex";
+    if (!chatOverlay)
+        return;
+    chatOverlay.style.display = 'flex';
 }
 // функция добавления сообщения в chatOverlay
 function appendMessage(role, text) {
-    if (!chatOverlay) {
+    const messagesContainer = shadowRootRef?.querySelector('#ai-chat-messages');
+    if (!messagesContainer) {
         return;
     }
-    const messagesContainer = chatOverlay.querySelector("#ai-chat-messages");
-    if (!(messagesContainer instanceof HTMLDivElement)) {
-        return;
-    }
-    const message = document.createElement("div");
-    message.classList.add("ai-chat-message");
+    const message = document.createElement('div');
+    message.classList.add('ai-chat-message');
     message.classList.add(role);
     message.textContent = text;
     messagesContainer.appendChild(message);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 // функция создания иконки для открытия chatOverlay
-function createChatIconButton() {
-    const button = document.createElement("button");
-    button.id = "ai-chat-floating-button";
-    button.innerHTML = "Chat";
-    button.addEventListener("click", (event) => {
+async function createChatIconButton() {
+    await initializeShadowRoot();
+    const button = document.createElement('button');
+    button.id = 'ai-chat-floating-button';
+    button.innerHTML = 'Chat';
+    button.addEventListener('click', (event) => {
         event.stopPropagation();
-        toggleChatOverlay();
+        // не ждём: showChatOverlay асинхронна
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        showChatOverlay();
     });
-    document.body.appendChild(button);
+    shadowRootRef?.appendChild(button);
     return button;
 }
 function toggleChatOverlay() {
     if (!chatOverlay) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         showChatOverlay();
         return;
     }
-    const isVisible = chatOverlay.style.display === "flex";
+    const isVisible = chatOverlay.style.display === 'flex';
     if (isVisible) {
-        chatOverlay.style.display = "none";
+        chatOverlay.style.display = 'none';
     }
     else {
-        chatOverlay.style.display = "flex";
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        showChatOverlay();
     }
 }
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
-chatIconButton = createChatIconButton();
+(async () => {
+    try {
+        chatIconButton = await createChatIconButton();
+    }
+    catch (err) {
+        console.warn('Не удалось инициализировать кнопку чата', err);
+    }
+})();

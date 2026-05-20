@@ -1,3 +1,4 @@
+export const GROQ_API = "###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###";
 export const PROMTS = {
     easy: `
 Ты редактор текста.
