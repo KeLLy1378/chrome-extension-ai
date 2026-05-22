@@ -1,4 +1,3 @@
-export const GROQ_API = "###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###";
 import type { Level } from "./types";
 
 export const PROMTS: Record<Level, string> = { // record создаёт объект с ключами типа Level и значениями типа string

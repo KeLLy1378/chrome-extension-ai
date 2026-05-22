@@ -21,7 +21,7 @@ let lastSelectedText: string | null = null;
 let chatOverlay: HTMLDivElement | null = null;
 let chatOverlayShadow: ShadowRoot | null = null;
 let chatIconButton: HTMLButtonElement | null = null;
-
+const minTextLength = 200; // минимальная длина текста для упрощения
 
 // Shadow host и root для всего UI расширения
 let extensionHost: HTMLDivElement | null = null;
@@ -156,8 +156,8 @@ async function createOverlay(): Promise<HTMLDivElement> {
                 return;
             }
 
-            if (lastSelectedText.trim().length < 200) {
-                alert('Пожалуйста, выделите текст длиной не менее 200 символов для упрощения.');
+            if (lastSelectedText.trim().length < minTextLength) {
+                alert(`Пожалуйста, выделите текст длиной не менее ${minTextLength} символов для упрощения.`);
                 return;
             }
 
@@ -166,9 +166,8 @@ async function createOverlay(): Promise<HTMLDivElement> {
 
             // дождёмся, чтобы chatOverlay гарантированно существовал в ShadowRoot
             await showChatOverlay();
-
-            appendMessage('user', `Упрости выделенный текст (уровень упрощения: ${level}): ${lastSelectedText}`);
-            appendMessage('assistant', 'Генерируем ответ...');
+            
+            appendMessage('user', `${lastSelectedText}`);
 
             chrome.runtime.sendMessage(
                 {
@@ -178,14 +177,23 @@ async function createOverlay(): Promise<HTMLDivElement> {
                 },
                 (response) => {
                     if (!response) {
-                        appendMessage('assistant', 'Нет ответа от background???');
+                        appendMessage('assistant', 'Ошибка: нет ответа от API. Попробуйте ещё раз.');
                         return;
                     }
 
                     if (response.success) {
-                        appendMessage('assistant', response.result);
+                        if (level === 'easy') {
+                            appendMessage('assistant', 'Выбран легкий уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
+                        } else if (level === 'medium') {
+                            appendMessage('assistant', 'Выбран средний уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
+                        } else if (level === 'hard') {
+                            appendMessage('assistant', 'Выбран высокий уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
+                        }
+                        setTimeout(() => {
+                            appendMessage('assistant', response.result);
+                        }, 500);
                     } else {
-                        appendMessage('assistant', `Ошибка:\n${response.error}`);
+                        appendMessage('assistant', `Ошибка: ${response.error}`);
                     }
                 }
             );
@@ -307,7 +315,7 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
 
     div.innerHTML = `
         <div class="ai-chat-header">
-            <span>Чат</span>
+            <span>Simply</span>
 
             <button id="close-chat-overlay">
                 ✕

@@ -209,6 +209,18 @@ simplifyBtn?.addEventListener('click', () => {
         }
     });
 });
+function setVersionBadge() {
+    if (!versionBadge)
+        return;
+    try {
+        const manifest = chrome.runtime.getManifest();
+        const version = manifest?.version || 'unknown';
+        versionBadge.textContent = `v${version} — beta test`;
+    }
+    catch (error) {
+        console.warn('[Popup] Не удалось получить версию расширения', error);
+    }
+}
 // Загружаем сохранённые настройки при открытии popup
 async function initializePopup() {
     console.log('[Popup] Инициализация popup...');
@@ -218,20 +230,6 @@ async function initializePopup() {
     setupApiKeyTracking();
     setupShowApiKeyToggle();
     setVersionBadge();
-}
-
-function setVersionBadge() {
-    if (!versionBadge) {
-        return;
-    }
-    try {
-        const manifest = chrome.runtime.getManifest();
-        const version = manifest?.version || 'unknown';
-        versionBadge.textContent = `v${version} — beta test`;
-    }
-    catch (error) {
-        console.warn('[Popup] Не удалось получить версию расширения', error);
-    }
 }
 // Инициализируем popup
 initializePopup();
