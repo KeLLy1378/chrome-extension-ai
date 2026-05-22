@@ -109,7 +109,7 @@ async function createOverlay(): Promise<HTMLDivElement> {
 
     // устанавливаем HTML структуру overlay
     div.innerHTML = `
-        <div class="text-adapter-title">Адаптация текста</div>
+        <div class="text-adapter-title">Упрощение текста</div>
 
         <div class="text-adapter-actions">
             <select id="simplification-level">
@@ -187,7 +187,7 @@ async function createOverlay(): Promise<HTMLDivElement> {
                         } else if (level === 'medium') {
                             appendMessage('assistant', 'Выбран средний уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
                         } else if (level === 'hard') {
-                            appendMessage('assistant', 'Выбран высокий уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
+                            appendMessage('assistant', 'Выбран сильный уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
                         }
                         setTimeout(() => {
                             appendMessage('assistant', response.result);
@@ -324,8 +324,8 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
 
         <div id="ai-chat-messages" class="ai-chat-messages"></div>
 
-        <div class="ai-chat-input-container">
-            <input 
+        <div class="ai-chat-input-container" style="display:none"> <!-- Временно скрываем. Недостаточно проработано -->
+            <input
                 id="ai-chat-input"
                 type="text"
                 placeholder="Напишите сообщение..."
@@ -405,7 +405,7 @@ async function createChatIconButton(): Promise<HTMLButtonElement> {
 
     const button = document.createElement('button');
     button.id = 'ai-chat-floating-button';
-    button.innerHTML = 'Chat';
+    button.innerHTML = 'S';
 
     button.addEventListener('click', (event) => {
         event.stopPropagation();
