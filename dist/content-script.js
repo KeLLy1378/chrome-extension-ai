@@ -114,6 +114,9 @@ async function createOverlay() {
             select.value = level;
         }
     });
+    select.addEventListener('change', () => {
+        chrome.storage.local.set({ textComplexityLevel: select.value });
+    });
     // добавляем обработчики событий для кнопок и других элементов внутри overlay
     const simplifyButton = div.querySelector('#simplify-button');
     const closeButton = div.querySelector('#close-overlay-button');
@@ -346,6 +349,15 @@ function toggleChatOverlay() {
         showChatOverlay();
     }
 }
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.textComplexityLevel) {
+        const newLevel = changes.textComplexityLevel.newValue;
+        const select = shadowRootRef?.querySelector('#simplification-level');
+        if (select) {
+            select.value = newLevel;
+        }
+    }
+});
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {

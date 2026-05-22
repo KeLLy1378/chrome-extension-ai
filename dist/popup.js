@@ -231,6 +231,15 @@ async function initializePopup() {
     setupShowApiKeyToggle();
     setVersionBadge();
 }
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.textComplexityLevel) {
+        const newLevel = changes.textComplexityLevel.newValue;
+        currentLevel = newLevel;
+        if (levelSelect) {
+            levelSelect.value = newLevel;
+        }
+    }
+});
 // Инициализируем popup
 initializePopup();
 export {};

@@ -255,5 +255,15 @@ async function initializePopup(): Promise<void> {
     setVersionBadge();
 }
 
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.textComplexityLevel) {
+        const newLevel = changes.textComplexityLevel.newValue as "easy" | "medium" | "hard";
+        currentLevel = newLevel;
+        if (levelSelect) {
+            levelSelect.value = newLevel;
+        }
+    }
+});
+
 // Инициализируем popup
 initializePopup();
