@@ -10,11 +10,11 @@
     display: none; 
     /* по умолчанию скрыто, показывается через JavaScript при выделении текста */
     
-    background-color: rgba(0, 0, 0, 0.8);
-    /* полупрозрачный чёрный фон (80% непрозрачности) */
-    
-    color: white;
-    /* белый текст для контраста */
+    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
+    /* градиентный фон: светло-фиолетовый -> персиковый */
+
+    color: black;
+    /* чёрный текст */
     
     padding: 5px 10px;
     /* внутренний отступ: 5px сверху/снизу, 10px слева/справа */
@@ -30,6 +30,25 @@
     
     cursor: pointer; 
     /* указатель мыши меняется на "рука" - пользователь понимает, что это кликабельно */
+}
+
+#text-adaption-overlay .text-adapter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+#text-adaption-overlay .text-adapter-actions select,
+#text-adaption-overlay .text-adapter-actions .text-adapter-button {
+    margin: 0;
+    background-color: #dda96d;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 13px;
 }
 
 
@@ -50,7 +69,7 @@
     height: 100vh;
     /* размер: 380px шириной, высота весь экран */
     
-    background: #111827;
+    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
     /* тёмный серо-синий фон (фон чата) */
     
     z-index: 999999;
@@ -60,8 +79,8 @@
     flex-direction: column;
     /* по умолчанию скрыто, при открытии используется flexbox колонка (элементы друг над другом) */
     
-    color: white;
-    /* белый текст */
+    color: #dda96d;
+    /* оранжевый текст */
     
     box-shadow: -4px 0 20px rgba(0,0,0,0.35);
     /* тень слева от панели - создаёт глубину и отделяет от страницы */
@@ -92,6 +111,27 @@
     font-weight: bold;
     /* жирный шрифт */
 }
+
+button#close-chat-overlay {
+    background-color: #FF8800;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+button#close-chat-overlay:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+
 
 
 /* ========================================
@@ -147,8 +187,8 @@
    ======================================== */
 
 .ai-chat-message.user {
-    background: #2563eb;
-    /* синий фон */
+    background: #000000;
+    /* чёрный фон */
     
     align-self: flex-end;
     /* выравнивание справа (пользовательские сообщения справа, как в ватсапе) */
@@ -161,7 +201,7 @@
    ======================================== */
 
 .ai-chat-message.assistant {
-    background: #374151;
+    background: #A100FF;
     /* серый фон */
     
     align-self: flex-start;
@@ -225,18 +265,18 @@
     bottom: 70%;
     /* позиция: 24px от правого края, примерно посередине высоты */
     
-    width: 100px;
+    width: 56px;
     height: 56px;
     /* размер: 100px ширина, 56px высота */
     
-    border-radius: 15%;
+    border-radius: 60%;
     /* слегка скруглённые углы */
     
     border: none;
     /* без границы */
     
-    background: #2563eb;
-    /* синий фон (как и сообщения пользователя) */
+    background: #FF8800;
+    /* оранжевый фон (как и сообщения пользователя) */
     
     color: white;
     /* белый текст "Chat" */
@@ -311,3 +351,6 @@
     margin-top: 18px !important;
 }
 
+.ai-chat-header{
+    font-size: 40px !important;
+}

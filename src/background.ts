@@ -1,5 +1,4 @@
 import type { Message } from "./types.js"; 
-import { GROQ_API } from "./config.js";
 import { PROMTS } from "./config.js";
 import type { Level } from "./types.js";
 
@@ -80,10 +79,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             console.log("Получен запрос на упрощение");
             
             GetSimplifiedText(message.level, message.text).then((simplifiedText) => {
-                sendResponse({
-                    success: true,
-                    result: simplifiedText
-                });
+                if (simplifiedText === null) {
+                    sendResponse({
+                        success: false,
+                        error: "Ошибка API: не удалось получить ответ. Проверьте API ключ."
+                    });
+                } else {
+                    sendResponse({
+                        success: true,
+                        result: simplifiedText
+                    });
+                }
             }).catch((error) => {
                 console.error(error);
                 sendResponse({

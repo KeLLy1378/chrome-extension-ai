@@ -10,6 +10,7 @@ const showApiKeyCheckbox = document.getElementById('showApiKey');
 const infoBtn = document.getElementById('infoBtn');
 const overlay = document.getElementById('overlay');
 const infoCloseBtn = document.getElementById('closeOverlay');
+const versionBadge = document.getElementById('extension-version-badge');
 // Обработчик для кнопки информации
 infoBtn?.addEventListener('click', () => {
     if (overlay != null) {
@@ -208,6 +209,18 @@ simplifyBtn?.addEventListener('click', () => {
         }
     });
 });
+function setVersionBadge() {
+    if (!versionBadge)
+        return;
+    try {
+        const manifest = chrome.runtime.getManifest();
+        const version = manifest?.version || 'unknown';
+        versionBadge.textContent = `v${version} — beta test`;
+    }
+    catch (error) {
+        console.warn('[Popup] Не удалось получить версию расширения', error);
+    }
+}
 // Загружаем сохранённые настройки при открытии popup
 async function initializePopup() {
     console.log('[Popup] Инициализация popup...');
@@ -216,7 +229,17 @@ async function initializePopup() {
     await loadApiKeyFromStorage();
     setupApiKeyTracking();
     setupShowApiKeyToggle();
+    setVersionBadge();
 }
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.textComplexityLevel) {
+        const newLevel = changes.textComplexityLevel.newValue;
+        currentLevel = newLevel;
+        if (levelSelect) {
+            levelSelect.value = newLevel;
+        }
+    }
+});
 // Инициализируем popup
 initializePopup();
 export {};

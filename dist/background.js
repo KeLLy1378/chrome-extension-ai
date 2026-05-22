@@ -72,10 +72,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             console.log("Получен запрос на упрощение");
             GetSimplifiedText(message.level, message.text).then((simplifiedText) => {
-                sendResponse({
-                    success: true,
-                    result: simplifiedText
-                });
+                if (simplifiedText === null) {
+                    sendResponse({
+                        success: false,
+                        error: "Ошибка API: не удалось получить ответ. Проверьте API ключ."
+                    });
+                }
+                else {
+                    sendResponse({
+                        success: true,
+                        result: simplifiedText
+                    });
+                }
             }).catch((error) => {
                 console.error(error);
                 sendResponse({
