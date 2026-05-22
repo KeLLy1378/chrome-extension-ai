@@ -351,3 +351,6 @@ button#close-chat-overlay:hover {
     margin-top: 18px !important;
 }
 
+.ai-chat-header{
+    font-size: 40px !important;
+}
