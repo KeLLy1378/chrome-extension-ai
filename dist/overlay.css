@@ -10,11 +10,11 @@
     display: none; 
     /* по умолчанию скрыто, показывается через JavaScript при выделении текста */
     
-    background-color: rgba(0, 0, 0, 0.8);
-    /* полупрозрачный чёрный фон (80% непрозрачности) */
-    
-    color: white;
-    /* белый текст для контраста */
+    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
+    /* градиентный фон: светло-фиолетовый -> персиковый */
+
+    color: black;
+    /* чёрный текст */
     
     padding: 5px 10px;
     /* внутренний отступ: 5px сверху/снизу, 10px слева/справа */
@@ -42,6 +42,13 @@
 #text-adaption-overlay .text-adapter-actions select,
 #text-adaption-overlay .text-adapter-actions .text-adapter-button {
     margin: 0;
+    background-color: #dda96d;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 13px;
 }
 
 
@@ -109,11 +116,19 @@ button#close-chat-overlay {
     background-color: #FF8800;
     width: 32px;
     height: 32px;
-    border-radius: 0;
+    border-radius: 50%;
+    border: none;
+    outline: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: black;    
+    color: black;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+button#close-chat-overlay:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 
