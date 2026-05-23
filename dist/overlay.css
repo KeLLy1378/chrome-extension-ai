@@ -79,7 +79,7 @@
     flex-direction: column;
     /* по умолчанию скрыто, при открытии используется flexbox колонка (элементы друг над другом) */
     
-    color: #dda96d;
+    color: white;
     /* оранжевый текст */
     
     box-shadow: -4px 0 20px rgba(0,0,0,0.35);
@@ -110,6 +110,8 @@
     
     font-weight: bold;
     /* жирный шрифт */
+
+    color: black
 }
 
 button#close-chat-overlay {
