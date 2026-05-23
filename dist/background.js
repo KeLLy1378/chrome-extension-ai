@@ -15,7 +15,7 @@ async function GetSimplifiedText(level, text) {
             'Authorization': `Bearer ${apiGroqKey.apiKey}` // через это мы передаём наш API ключ
         },
         body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
+            model: 'llama-3.3-70b-versatile',
             messages: [
                 {
                     role: 'system',
@@ -23,7 +23,7 @@ async function GetSimplifiedText(level, text) {
                 },
                 {
                     role: 'user',
-                    content: text
+                    content: `<source>${text}</source>`
                 }
             ]
         })
@@ -42,9 +42,10 @@ async function GetSimplifiedText(level, text) {
         // если всё хорошо то мы принимает данные и отправляем в console.log
         const data = await response.json();
         console.log(data);
-        const text = data.choices[0].message.content; // по этому пути мы можем получить текст ответа от groq
-        console.log(text);
-        return text;
+        let result = data.choices[0].message.content;
+        result = result.replace(/^<source>\s*/i, '').replace(/\s*<\/source>$/i, '');
+        console.log(result);
+        return result;
     }
 }
 ;
