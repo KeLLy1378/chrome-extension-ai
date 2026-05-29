@@ -10,50 +10,35 @@ const GetSelectedTextMessage: Message = {action: "GET_SELECTED_TEXT"};
 let returnTextEnabled: boolean = false; // переменная для отслеживания, нужно ли возвращать оригинальный текст
 
 
-// функция для отправки сообщения Groq для упрощения текста
-async function GetSimplifiedText(level: Level, text: string){
+// функция для отправки запроса к Cloudflare Worker
+async function GetSimplifiedText(level: Level, text: string) {
     const promt: string = PROMTS[level];
-    const apiGroqKey = await chrome.storage.local.get('apiKey');
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: "POST", // метод POST означает что мы отправляем запрос на сервер, а не просто получаем данные
+    const WORKER_URL = 'https://chrome-extension-worker.kelly781337673.workers.dev/';
+
+    const response = await fetch(WORKER_URL, {
+        method: "POST",
         headers: {
-            'Content-Type': 'application/json', // тут мы говорим что используем json в теле запроса
-            'Authorization': `Bearer ${apiGroqKey.apiKey}` // через это мы передаём наш API ключ
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ // через JSON.stringify превращаем объект JSON в строку
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                {
-                    role: 'system',
-                    content: promt
-                },
-                {
-                    role: 'user',
-                    content: `<source>${text}</source>`
-                }
-            ]
+        body: JSON.stringify({
+            prompt: promt,
+            text: text
         })
     });
-    // проверка на случай если что то не так с запросом, чтобы вывелась сама ошибка, а не просто in promise error
-    if (!response.ok){
+
+    if (!response.ok) {
         const errorJson = await response.json().catch(async () => {
-            const text = await response.text();
-            return { raw: text };
+            const t = await response.text();
+            return { raw: t };
         });
         console.log("Status:", response.status);
-        console.log("Groq error full:", errorJson);
+        console.log("Worker error full:", errorJson);
         return null;
-    }
-    else {
-        // если всё хорошо то мы принимает данные и отправляем в console.log
+    } else {
         const data = await response.json();
-        console.log(data);
-        let result: string = data.choices[0].message.content;
-        result = result.replace(/^<source>\s*/i, '').replace(/\s*<\/source>$/i, '');
-        console.log(result);
-        return result;
+        return data.result;
     }
-};
+}
 
 // функция получения текста со страницы
 function getSelectedText(msg: Message, callback: (text: string) => void) { // callback нужен для того, чтобы работать с текстом после его получения, так как получение текста асинхронное

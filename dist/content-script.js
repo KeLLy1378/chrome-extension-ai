@@ -65,6 +65,16 @@ async function getSelectedText() {
         return text;
     }
 }
+function trimPartialWords(text) {
+    let result = text.trim();
+    result = result.replace(/^\S*?\s/, (match) => {
+        return /^[а-яёa-z]/.test(match) ? '' : match;
+    });
+    result = result.replace(/\s\S*$/, (match) => {
+        return /[.!?»)\]]\s*$/.test(match) ? match : '';
+    });
+    return result.trim();
+}
 function getPageText() {
     const ignoreTags = ['script', 'style', 'nav', 'header', 'footer',
         'button', 'input', 'select', 'textarea', 'menu',
@@ -92,9 +102,9 @@ async function createOverlay() {
     div.id = 'text-adaption-overlay';
     div.innerHTML = `
         <div class="text-adapter-actions">
-            <button class="text-adapter-level" data-level="easy">Упростить язык</button>
-            <button class="text-adapter-level" data-level="medium">Сократить</button>
-            <button class="text-adapter-level" data-level="hard">Выжать суть</button>
+            <button class="text-adapter-level" data-level="simplify">Упростить язык</button>
+            <button class="text-adapter-level" data-level="shorten">Сократить</button>
+            <button class="text-adapter-level" data-level="essence">Выжать суть</button>
         </div>
     `;
     shadowRootRef?.appendChild(div);
@@ -109,6 +119,7 @@ async function createOverlay() {
                 return;
             }
             const level = btn.dataset.level;
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             simplifyText(lastSelectedText, level);
             hideOverlay();
         });
@@ -185,7 +196,7 @@ document.addEventListener('mouseup', (event) => {
             hideOverlay();
             return;
         }
-        lastSelectedText = text;
+        lastSelectedText = trimPartialWords(text) || text;
         await showOverlayNearSelection();
     }, 100);
 });
@@ -232,8 +243,14 @@ async function showChatOverlay() {
         return;
     chatOverlay.style.display = 'flex';
 }
-function addFeedBlock(originalText) {
+const RESULT_LABELS = {
+    simplify: 'УПРОЩЁННЫЙ ЯЗЫК',
+    shorten: 'СОКРАЩЕНО',
+    essence: 'СУТЬ',
+};
+function addFeedBlock(originalText, level) {
     const feed = shadowRootRef?.querySelector('#simply-feed');
+    const resultLabel = RESULT_LABELS[level] || 'РЕЗУЛЬТАТ';
     const block = document.createElement('div');
     block.className = 'simply-block';
     block.innerHTML = `
@@ -242,7 +259,7 @@ function addFeedBlock(originalText) {
             <div class="simply-block__text">${originalText}</div>
         </div>
         <div class="simply-block__result">
-            <span class="simply-label">УПРОЩЁННО</span>
+            <span class="simply-label">${resultLabel}</span>
             <div class="simply-block__text">...</div>
             <button class="simply-copy">Скопировать</button>
         </div>
@@ -256,10 +273,9 @@ function addFeedBlock(originalText) {
     feed.scrollTop = feed.scrollHeight;
     return block;
 }
-function simplifyText(text, level) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    showChatOverlay();
-    const block = addFeedBlock(text);
+async function simplifyText(text, level) {
+    await showChatOverlay();
+    const block = addFeedBlock(text, level);
     const resultText = block.querySelector('.simply-block__result .simply-block__text');
     chrome.runtime.sendMessage({ action: 'SIMPLIFY_TEXT', text, level }, (response) => {
         if (response?.success) {
@@ -306,9 +322,32 @@ function toggleChatOverlay() {
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {
-        chatIconButton = await createChatIconButton();
+        const stored = await chrome.storage.local.get('showFloatingButton');
+        const show = stored.showFloatingButton !== false;
+        if (show) {
+            chatIconButton = await createChatIconButton();
+        }
     }
     catch (err) {
         console.warn('Не удалось инициализировать кнопку чата', err);
     }
 })();
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !('showFloatingButton' in changes))
+        return;
+    const show = changes.showFloatingButton.newValue !== false;
+    if (show) {
+        if (!chatIconButton) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            createChatIconButton().then(btn => { chatIconButton = btn; });
+        }
+        else {
+            chatIconButton.style.display = '';
+        }
+    }
+    else {
+        if (chatIconButton) {
+            chatIconButton.style.display = 'none';
+        }
+    }
+});

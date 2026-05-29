@@ -12,36 +12,26 @@
         <div class="app">
             <div class="card">
                 <h1 class="card__name">Упрощение текста</h1>
-                <p class="card__text">Уровень упрощения</p>
 
                 <div class="dropdown">
-                     <button id="infoBtn" class="info-btn" type="button">?</button>
-                    <select id="levelSelect" name="Simplify level">
-                        <option value="easy">Лёгкий</option>
-                        <option value="medium">Средний</option>
-                        <option value="hard">Сильный</option>
-                    </select>
+                    <button id="infoBtn" class="info-btn" type="button">?</button>
                 </div>
 
                 <div id="overlay" class="overlay hidden">
                     <div class="modal">
                         <h3>Уровни упрощения</h3>
-                        <p><strong>Лёгкий</strong> - тот же объём, проще читается. Термины и стиль сохраняются.</p>
-                        <p><strong>Средний</strong> - короче на треть. Сложные слова заменяются простыми синонимами.</p>
-                        <p><strong>Сильный</strong> - только суть. Одна мысль это одно короткое предложение.</p>
+                        <p><strong>Упростить язык</strong> — тот же объём, читается легче. Термины сохраняются.</p>
+                        <p><strong>Сократить</strong> — короче на треть, главное сохранено.</p>
+                        <p><strong>Выжать суть</strong> — только ключевые мысли, коротко.</p>
                         <button id="closeOverlay" class="closeOverlay">Закрыть</button>
                     </div>
                 </div>
 
-                <div class="api-key-field">
-                    <label for="apiKeyInput">API ключ</label>
-                    <input id="apiKeyInput" type="password" placeholder="Введите API ключ">
-                    <label class="api-key-checkbox"><input type="checkbox" id="showApiKey"> Показать ключ</label>
-                </div>
+                <label class="toggle-label">
+                    <input type="checkbox" id="toggleFloatingBtn" checked>
+                    Показывать кнопку Simply на странице
+                </label>
 
-                <!--<div class="buttons"> 
-                    <button class="btn" id="simplifyBtn">Упростить весь текст на странице</button>
-                </div>-->
                 <div class="img">
                     <img src="Images/Vector.svg">
                 </div>

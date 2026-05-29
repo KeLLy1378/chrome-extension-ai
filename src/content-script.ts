@@ -1,18 +1,16 @@
 console.log("Content script loaded");
 
 // тип сообщений Message
-type Message = 
-    | { action: "SIMPLIFY_TEXT", level: Level, apiKey?: string }  // Добавляем apiKey (опциональный)
+type Message =
+    | { action: "SIMPLIFY_TEXT", level: Level, text: string }
     | { action: "SIMPLIFY_RESULT", result: string }
     | { action: "RETURN_ORIGINAL_TEXT" }
     | { action: "GET_SELECTED_TEXT" }
     | { action: "ENABLE_BUTTON" }
-    | { action: "DISABLE_BUTTON" }
-    | { action: "UPDATE_API_KEY", apiKey: string }  // Добавляем новый тип для обновления ключа
-    | { action: "GET_API_KEY" };  // Опционально
+    | { action: "DISABLE_BUTTON" };
 
 // локальное определение типа Level
-type Level = "easy" | "medium" | "hard";
+type Level = "simplify" | "shorten" | "essence";
 
 // глобальная переменная для overlay
 let overlay: HTMLDivElement | null = null;
@@ -87,6 +85,17 @@ async function getSelectedText(): Promise<string | null> {
     }
 }
 
+function trimPartialWords(text: string): string {
+    let result = text.trim();
+    result = result.replace(/^\S*?\s/, (match) => {
+        return /^[а-яёa-z]/.test(match) ? '' : match;
+    });
+    result = result.replace(/\s\S*$/, (match) => {
+        return /[.!?»)\]]\s*$/.test(match) ? match : '';
+    });
+    return result.trim();
+}
+
 function getPageText(): string {
     const ignoreTags = ['script', 'style', 'nav', 'header', 'footer',
                         'button', 'input', 'select', 'textarea', 'menu',
@@ -122,9 +131,9 @@ async function createOverlay(): Promise<HTMLDivElement> {
 
     div.innerHTML = `
         <div class="text-adapter-actions">
-            <button class="text-adapter-level" data-level="easy">Упростить язык</button>
-            <button class="text-adapter-level" data-level="medium">Сократить</button>
-            <button class="text-adapter-level" data-level="hard">Выжать суть</button>
+            <button class="text-adapter-level" data-level="simplify">Упростить язык</button>
+            <button class="text-adapter-level" data-level="shorten">Сократить</button>
+            <button class="text-adapter-level" data-level="essence">Выжать суть</button>
         </div>
     `;
 
@@ -144,6 +153,7 @@ async function createOverlay(): Promise<HTMLDivElement> {
             }
 
             const level = (btn as HTMLElement).dataset.level as Level;
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             simplifyText(lastSelectedText, level);
             hideOverlay();
         });
@@ -240,7 +250,7 @@ document.addEventListener('mouseup', (event) => {
             return;
         }
 
-        lastSelectedText = text;
+        lastSelectedText = trimPartialWords(text) || text;
         await showOverlayNearSelection();
     }, 100);
 });
@@ -301,8 +311,15 @@ async function showChatOverlay(): Promise<void> {
     chatOverlay.style.display = 'flex';
 }
 
-function addFeedBlock(originalText: string): HTMLDivElement {
+const RESULT_LABELS: Record<string, string> = {
+    simplify: 'УПРОЩЁННЫЙ ЯЗЫК',
+    shorten: 'СОКРАЩЕНО',
+    essence: 'СУТЬ',
+};
+
+function addFeedBlock(originalText: string, level: string): HTMLDivElement {
     const feed = shadowRootRef?.querySelector('#simply-feed') as HTMLDivElement;
+    const resultLabel = RESULT_LABELS[level] || 'РЕЗУЛЬТАТ';
 
     const block = document.createElement('div');
     block.className = 'simply-block';
@@ -312,7 +329,7 @@ function addFeedBlock(originalText: string): HTMLDivElement {
             <div class="simply-block__text">${originalText}</div>
         </div>
         <div class="simply-block__result">
-            <span class="simply-label">УПРОЩЁННО</span>
+            <span class="simply-label">${resultLabel}</span>
             <div class="simply-block__text">...</div>
             <button class="simply-copy">Скопировать</button>
         </div>
@@ -330,10 +347,9 @@ function addFeedBlock(originalText: string): HTMLDivElement {
     return block;
 }
 
-function simplifyText(text: string, level: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    showChatOverlay();
-    const block = addFeedBlock(text);
+async function simplifyText(text: string, level: string): Promise<void> {
+    await showChatOverlay();
+    const block = addFeedBlock(text, level);
     const resultText = block.querySelector('.simply-block__result .simply-block__text') as HTMLDivElement;
 
     chrome.runtime.sendMessage(
@@ -392,8 +408,31 @@ function toggleChatOverlay(): void {
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {
-        chatIconButton = await createChatIconButton();
+        const stored = await chrome.storage.local.get('showFloatingButton');
+        const show = stored.showFloatingButton !== false;
+        if (show) {
+            chatIconButton = await createChatIconButton();
+        }
     } catch (err) {
         console.warn('Не удалось инициализировать кнопку чата', err);
     }
 })();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !('showFloatingButton' in changes)) return;
+
+    const show = changes.showFloatingButton.newValue !== false;
+
+    if (show) {
+        if (!chatIconButton) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            createChatIconButton().then(btn => { chatIconButton = btn; });
+        } else {
+            chatIconButton.style.display = '';
+        }
+    } else {
+        if (chatIconButton) {
+            chatIconButton.style.display = 'none';
+        }
+    }
+});
