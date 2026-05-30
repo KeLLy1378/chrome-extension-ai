@@ -412,13 +412,13 @@
 #text-adaption-overlay,
 #text-adaption-overlay * { box-sizing: border-box; }
 
-.text-adapter-level {
+.text-adapter-actions {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.text-adapter-level button {
+.text-adapter-level {
     border: none;
     border-radius: 8px;
     padding: 8px 14px;
@@ -432,8 +432,8 @@
     transition: background-color .15s ease, color .15s ease;
 }
 
-.text-adapter-level button:hover  { background: var(--indigo);      color: #FFFFFF; }
-.text-adapter-level button:active { background: var(--indigo-dark); color: #FFFFFF; }
+.text-adapter-level:hover  { background: var(--indigo);      color: #FFFFFF; }
+.text-adapter-level:active { background: var(--indigo-dark); color: #FFFFFF; }
 
 /* =========================================================
    Focus ring — the only shadow allowed besides the overlay's
@@ -441,7 +441,7 @@
 #ai-chat-floating-button:focus-visible,
 #close-chat-overlay:focus-visible,
 .simply-copy:focus-visible,
-.text-adapter-level button:focus-visible {
+.text-adapter-level:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(108, 92, 231, .35);
 }
