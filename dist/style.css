@@ -1,76 +1,205 @@
+/* =========================================================
+   Simply — popup / style.css
+   ========================================================= */
+
+:root {
+    --bg:           #FDFCFF;
+    --surface:      #EEE9FF;
+    --indigo:       #6C5CE7;
+    --indigo-dark:  #3B2A8A;
+    --amber:        #EF9F27;
+    --amber-bg:     #FFF8EE;
+    --amber-border: #FAC775;
+    --muted:        #7A7490;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--indigo-dark);
+    line-height: 1.5;
+}
+
+/* ---------- Card (sets popup dimensions) ---------- */
 .card {
-    width: 358px;
-    height: 520px;
+    width: 300px;
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    box-sizing: border-box;
-    color: #FF8800;
-    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
+    padding: 20px 20px 68px;   /* bottom: room for fixed logo */
+    background: var(--bg);
 }
 
+/* ---------- Title ---------- */
 .card__name {
-    text-align: center;
-    font-size: 40px;
-    margin-bottom: 0%;
+    margin: 0 0 4px;
+    padding-right: 52px;       /* clear the version badge */
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--indigo-dark);
 }
 
+/* ---------- Info button ---------- */
 .dropdown {
     display: flex;
-    justify-content: center;
-    margin-bottom: 16px;  
-    margin-right: 30px; 
-}
-.btn {
-    cursor: pointer;
-    color: #FF8800;
-    border-color: #FF8800;
-    border-radius: 12px;
-    font-size: 18px; 
-    margin-bottom: 15px;
-    /* это чтобы нельзя было выделить текст конпки */
-    -webkit-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    background: #ffffff;
+    justify-content: flex-start;
+    margin: 0 0 24px;
 }
 
-.buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 30px;   
-}
-
-.card__text {
-    display: flex;
-    flex-direction: column;
+.info-btn {
+    display: inline-flex;
     align-items: center;
-    font-size: 25px;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
 }
 
-.btn:enabled:hover {
-    color: #A100FF;
-    border-color: #A100FF;
+.info-btn:hover  { background: var(--indigo); color: #FFFFFF; }
+
+.info-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, .35);
 }
 
-.btn:enabled:active{
-    color: #FF8800;
-    border-color: #FF8800;
-}
-/* это чтобы кнопки не реагировали на наведение и нажатия, когда они отключены */
-.btn:disabled {
-    color: #444444;
-    border-color: #444444;
-    pointer-events: none;
-    cursor: not-allowed;
-    background-color: #ffffff;
-    opacity: 50%;
+/* ---------- Modal backdrop ---------- */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(59, 42, 138, .18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
 
+.hidden { display: none; }
+
+/* ---------- Modal card ---------- */
+.modal {
+    background: var(--bg);
+    border: 1px solid var(--surface);
+    border-radius: 14px;
+    padding: 20px;
+    width: 256px;
+}
+
+.modal h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--indigo-dark);
+}
+
+.modal p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--indigo-dark);
+    line-height: 1.55;
+}
+
+.modal p strong { font-weight: 500; }
+
+.modal p:last-of-type { margin-bottom: 16px; }
+
+.closeOverlay {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    background: var(--indigo);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color .15s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.closeOverlay:hover  { background: var(--indigo-dark); }
+
+.closeOverlay:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, .35);
+}
+
+/* ---------- Toggle ---------- */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--indigo-dark);
+    padding: 16px 0;
+    border-top: 1px solid var(--surface);
+}
+
+/* Custom toggle track */
+.toggle-label input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex-shrink: 0;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background-color .2s ease;
+}
+
+/* Toggle thumb */
+.toggle-label input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    top: 2px;
+    left: 2px;
+    transition: transform .2s ease, background-color .2s ease;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+    background: var(--indigo);
+}
+
+.toggle-label input[type="checkbox"]:checked::before {
+    background: #FFFFFF;
+    transform: translateX(16px);
+}
+
+.toggle-label input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, .35);
+}
+
+/* ---------- Logo ---------- */
 .img {
     position: fixed;
-    bottom: 15px;
+    bottom: 16px;
     left: 0;
     right: 0;
     display: flex;
@@ -78,174 +207,28 @@
 }
 
 .img img {
-    width: 80%;
-    max-width: 80%;
+    width: 68px;
+    opacity: .28;
 }
 
-.dropdown select {
-    color: #FF8800;
-    border: 1px solid #FF8800;
-    height: 40px;
-    width: 200px;
-    text-align: center;
-    font-size: 18px;
-    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
-    border-radius: 12px;
-
-}
-
-.dropdown select:focus {
-    border-color: #FF8800;
-    outline: none;
-    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
-}
-
-.dropdown select option {
-    background: inherit;
-    color: #FF8800;
-}
-
-.api-key-field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.api-key-field label {
-    font-size: 16px;
-    color: #FF8800;
-}
-
-.api-key-field input[type="password"] {
-    width: 240px;
-    height: 38px;
-    border: 1px solid #FF8800;
-    border-radius: 12px;
-    padding: 0 12px;
-    font-size: 16px;
-    color: #FF8800;
-    background: inherit;
-}
-
-.api-key-field input[type="password"]:focus {
-    border-color: #FF8800;
-    outline: none;
-    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
-}
-
-.api-key-checkbox {
-    width: 240px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    color: #FF8800;
-    font-size: 14px;
-    gap: 8px;
-}
-
-.api-key-field input::placeholder {
-    color: #FF8800;
-}
-
-option {
-    color: #FF8800;
-}
-
-.api-key-field input[type="text"] {
-    width: 240px;
-    height: 38px;
-    border: 1px solid #FF8800;
-    border-radius: 12px;
-    padding: 0 12px;
-    font-size: 16px;
-    color: #FF8800;
-    background: inherit;
-}
-
-.api-key-field input[type="text"]:focus {
-    border-color: #FF8800;
-    outline: none;
-    box-shadow: 0 0 0 1px rgba(255, 136, 0, 0.35);
-}
-
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal {
-    background:linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%) ;
-    padding: 16px;
-    border-radius: 10px;
-    width: 250px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.hidden {
-    display: none;
-}
-
-.info-btn {
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    border: 1px solid #FF8800;
-    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%) ;
-    color: #FF8800;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 50%;
-    margin-right: 10px;
-
-} 
-
-.closeOverlay {
-    cursor: pointer;
-    color: #FF8800;
-    border-color: #FF8800;
-    border-radius: 12px;
-    font-size: 18px; 
-    margin-bottom: 15px;
-    /* это чтобы нельзя было выделить текст конпки */
-    -webkit-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    background: #ffffff;
-}
-
+/* ---------- Version badge ---------- */
 #extension-version-badge {
     position: fixed;
-    top: 12px;
-    left: 12px;
-    background: rgba(17, 24, 39, 0.88);
-    color: #f8fafc;
-    border-radius: 8px;
-    padding: 4px 10px;
+    top: 20px;
+    right: 16px;
+    background: var(--surface);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 2px 8px;
     font-size: 11px;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
+    font-weight: 500;
+    letter-spacing: .02em;
     z-index: 1001;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
-    max-width: calc(100% - 24px);
 }
 
-@media (max-width: 360px) {
-    #extension-version-badge {
-        display: none;
-    }
+@media (max-width: 300px) {
+    #extension-version-badge { display: none; }
 }
