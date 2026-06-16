@@ -275,7 +275,13 @@ function addFeedBlock(originalText, level) {
         </div>
         <div class="simply-block__result">
             <span class="simply-label">${resultLabel}</span>
-            <div class="simply-block__text">...</div>
+            <div class="simply-block__text">
+                <span class="simply-typing">
+                    <span class="simply-typing__dot"></span>
+                    <span class="simply-typing__dot"></span>
+                    <span class="simply-typing__dot"></span>
+                </span>
+            </div>
             <button class="simply-copy">Скопировать</button>
             <div class="simply-block__model"></div>
         </div>
@@ -289,6 +295,23 @@ function addFeedBlock(originalText, level) {
     feed.scrollTop = feed.scrollHeight;
     return block;
 }
+function typeText(element, text, speed = 6) {
+    element.textContent = '';
+    let i = 0;
+    const timer = setInterval(() => {
+        if (i < text.length) {
+            element.textContent += text.charAt(i);
+            i++;
+            // автоскролл ленты вниз во время печати
+            const feed = shadowRootRef?.querySelector('#simply-feed');
+            if (feed)
+                feed.scrollTop = feed.scrollHeight;
+        }
+        else {
+            clearInterval(timer);
+        }
+    }, speed);
+}
 async function simplifyText(text, level) {
     await showChatOverlay();
     const block = addFeedBlock(text, level);
@@ -296,7 +319,7 @@ async function simplifyText(text, level) {
     const modelLabel = block.querySelector('.simply-block__model');
     chrome.runtime.sendMessage({ action: 'SIMPLIFY_TEXT', text, level, provider: selectedProvider }, (response) => {
         if (response?.success) {
-            resultText.textContent = response.result;
+            typeText(resultText, response.result);
             if (response?.provider && response?.model) {
                 const providerName = response.provider === 'gemini' ? 'Gemini' : 'Groq';
                 modelLabel.textContent = `${providerName} · ${response.model}`;
@@ -315,7 +338,13 @@ async function createChatIconButton() {
     await initializeShadowRoot();
     const button = document.createElement('button');
     button.id = 'ai-chat-floating-button';
-    button.innerHTML = 'S';
+    button.innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="34" y="40" width="60" height="9" rx="4.5" fill="#FFFFFF"/>
+            <rect x="34" y="59" width="47" height="9" rx="4.5" fill="#FFF8EE" opacity="0.75"/>
+            <rect x="34" y="78" width="32" height="9" rx="4.5" fill="#EF9F27"/>
+        </svg>
+    `;
     button.addEventListener('click', (event) => {
         event.stopPropagation();
         // не ждём: showChatOverlay асинхронна

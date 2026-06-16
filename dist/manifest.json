@@ -7,9 +7,19 @@
     "tabs",
     "storage"
   ],
+  "icons": {
+    "16": "Images/icon-16.png",
+    "48": "Images/icon-48.png",
+    "128": "Images/icon-128.png"
+  },
   "action": {
     "default_title": "Simply",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "Images/icon-16.png",
+      "48": "Images/icon-48.png",
+      "128": "Images/icon-128.png"
+    }
   },
   "background": {
     "service_worker": "background.js",
@@ -17,12 +27,11 @@
   },
   "content_scripts": [
     {
-    "matches": ["https://*/*"],
-    "js": ["content-script.js"],
-    "css": ["overlay.css"]
+      "matches": ["https://*/*"],
+      "js": ["content-script.js"],
+      "css": ["overlay.css"]
     }
-  ]
-  ,
+  ],
   "web_accessible_resources": [
     {
       "resources": ["overlay.css"],
