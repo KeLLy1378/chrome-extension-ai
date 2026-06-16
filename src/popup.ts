@@ -20,7 +20,7 @@ function setVersionBadge(): void {
     try {
         const manifest = chrome.runtime.getManifest();
         const version = manifest?.version || 'unknown';
-        versionBadge.textContent = `v${version} — beta test`;
+        versionBadge.textContent = `v${version} — stable`;
     } catch (error) {
         console.warn('[Popup] Не удалось получить версию расширения', error);
     }
