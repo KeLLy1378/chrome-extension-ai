@@ -2,7 +2,7 @@ console.log("Content script loaded");
 
 // тип сообщений Message
 type Message =
-    | { action: "SIMPLIFY_TEXT", level: Level, text: string }
+    | { action: "SIMPLIFY_TEXT", level: Level, text: string, provider?: string }
     | { action: "SIMPLIFY_RESULT", result: string }
     | { action: "RETURN_ORIGINAL_TEXT" }
     | { action: "GET_SELECTED_TEXT" }
@@ -19,6 +19,7 @@ let lastSelectedText: string | null = null;
 let chatOverlay: HTMLDivElement | null = null;
 let chatOverlayShadow: ShadowRoot | null = null;
 let chatIconButton: HTMLButtonElement | null = null;
+let selectedProvider: string = 'groq';
 const minTextLength = 200; // минимальная длина текста для упрощения
 
 // Shadow host и root для всего UI расширения
@@ -277,13 +278,19 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
     div.innerHTML = `
         <div class="simply-header">
             <div class="simply-header-title">
-                <div class="simply-logo">S</div>
                 <span>Simply</span>
             </div>
             <button id="close-chat-overlay">✕</button>
         </div>
 
         <div id="simply-feed" class="simply-feed"></div>
+
+        <div class="simply-footer-bar">
+            <select id="simply-provider" class="simply-provider">
+                <option value="groq">Groq — gpt-oss-120b</option>
+                <option value="gemini">Gemini — gemini-2.5-flash</option>
+            </select>
+        </div>
     `;
 
     shadowRootRef?.appendChild(div);
@@ -292,6 +299,15 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
     if (closeButton instanceof HTMLButtonElement) {
         closeButton.addEventListener('click', () => {
             div.style.display = 'none';
+        });
+    }
+
+    const providerSelect = div.querySelector('#simply-provider');
+    if (providerSelect instanceof HTMLSelectElement) {
+        providerSelect.value = selectedProvider;
+        providerSelect.addEventListener('change', () => {
+            selectedProvider = providerSelect.value;
+            chrome.storage.local.set({ selectedProvider });
         });
     }
 
@@ -332,6 +348,7 @@ function addFeedBlock(originalText: string, level: string): HTMLDivElement {
             <span class="simply-label">${resultLabel}</span>
             <div class="simply-block__text">...</div>
             <button class="simply-copy">Скопировать</button>
+            <div class="simply-block__model"></div>
         </div>
     `;
 
@@ -351,14 +368,19 @@ async function simplifyText(text: string, level: string): Promise<void> {
     await showChatOverlay();
     const block = addFeedBlock(text, level);
     const resultText = block.querySelector('.simply-block__result .simply-block__text') as HTMLDivElement;
+    const modelLabel = block.querySelector('.simply-block__model') as HTMLDivElement;
 
     chrome.runtime.sendMessage(
-        { action: 'SIMPLIFY_TEXT', text, level },
+        { action: 'SIMPLIFY_TEXT', text, level, provider: selectedProvider },
         (response) => {
             if (response?.success) {
                 resultText.textContent = response.result;
+                if (response?.provider && response?.model) {
+                    const providerName = response.provider === 'gemini' ? 'Gemini' : 'Groq';
+                    modelLabel.textContent = `${providerName} · ${response.model}`;
+                }
             } else {
-                resultText.textContent = `Ошибка: ${response?.error || 'нет ответа'}`;
+                resultText.textContent = response?.error || 'Не удалось получить ответ.';
             }
             const feed = shadowRootRef?.querySelector('#simply-feed') as HTMLDivElement;
             if (feed) feed.scrollTop = feed.scrollHeight;
@@ -408,8 +430,9 @@ function toggleChatOverlay(): void {
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {
-        const stored = await chrome.storage.local.get('showFloatingButton');
+        const stored = await chrome.storage.local.get(['showFloatingButton', 'selectedProvider']);
         const show = stored.showFloatingButton !== false;
+        selectedProvider = (stored.selectedProvider as string) || 'groq';
         if (show) {
             chatIconButton = await createChatIconButton();
         }

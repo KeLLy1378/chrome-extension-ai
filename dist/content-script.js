@@ -7,6 +7,7 @@ let lastSelectedText = null;
 let chatOverlay = null;
 let chatOverlayShadow = null;
 let chatIconButton = null;
+let selectedProvider = 'groq';
 const minTextLength = 200; // минимальная длина текста для упрощения
 // Shadow host и root для всего UI расширения
 let extensionHost = null;
@@ -216,19 +217,33 @@ async function createChatOverlay() {
     div.innerHTML = `
         <div class="simply-header">
             <div class="simply-header-title">
-                <div class="simply-logo">S</div>
                 <span>Simply</span>
             </div>
             <button id="close-chat-overlay">✕</button>
         </div>
 
         <div id="simply-feed" class="simply-feed"></div>
+
+        <div class="simply-footer-bar">
+            <select id="simply-provider" class="simply-provider">
+                <option value="groq">Groq — gpt-oss-120b</option>
+                <option value="gemini">Gemini — gemini-2.5-flash</option>
+            </select>
+        </div>
     `;
     shadowRootRef?.appendChild(div);
     const closeButton = div.querySelector('#close-chat-overlay');
     if (closeButton instanceof HTMLButtonElement) {
         closeButton.addEventListener('click', () => {
             div.style.display = 'none';
+        });
+    }
+    const providerSelect = div.querySelector('#simply-provider');
+    if (providerSelect instanceof HTMLSelectElement) {
+        providerSelect.value = selectedProvider;
+        providerSelect.addEventListener('change', () => {
+            selectedProvider = providerSelect.value;
+            chrome.storage.local.set({ selectedProvider });
         });
     }
     chatOverlay = div;
@@ -262,6 +277,7 @@ function addFeedBlock(originalText, level) {
             <span class="simply-label">${resultLabel}</span>
             <div class="simply-block__text">...</div>
             <button class="simply-copy">Скопировать</button>
+            <div class="simply-block__model"></div>
         </div>
     `;
     const copyBtn = block.querySelector('.simply-copy');
@@ -277,12 +293,17 @@ async function simplifyText(text, level) {
     await showChatOverlay();
     const block = addFeedBlock(text, level);
     const resultText = block.querySelector('.simply-block__result .simply-block__text');
-    chrome.runtime.sendMessage({ action: 'SIMPLIFY_TEXT', text, level }, (response) => {
+    const modelLabel = block.querySelector('.simply-block__model');
+    chrome.runtime.sendMessage({ action: 'SIMPLIFY_TEXT', text, level, provider: selectedProvider }, (response) => {
         if (response?.success) {
             resultText.textContent = response.result;
+            if (response?.provider && response?.model) {
+                const providerName = response.provider === 'gemini' ? 'Gemini' : 'Groq';
+                modelLabel.textContent = `${providerName} · ${response.model}`;
+            }
         }
         else {
-            resultText.textContent = `Ошибка: ${response?.error || 'нет ответа'}`;
+            resultText.textContent = response?.error || 'Не удалось получить ответ.';
         }
         const feed = shadowRootRef?.querySelector('#simply-feed');
         if (feed)
@@ -322,8 +343,9 @@ function toggleChatOverlay() {
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {
-        const stored = await chrome.storage.local.get('showFloatingButton');
+        const stored = await chrome.storage.local.get(['showFloatingButton', 'selectedProvider']);
         const show = stored.showFloatingButton !== false;
+        selectedProvider = stored.selectedProvider || 'groq';
         if (show) {
             chatIconButton = await createChatIconButton();
         }

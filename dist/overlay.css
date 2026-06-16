@@ -171,6 +171,48 @@
 #simply-feed::-webkit-scrollbar-thumb { background: var(--surface); border-radius: 8px; }
 #simply-feed::-webkit-scrollbar-track { background: transparent; }
 
+/* Footer bar — provider selector */
+.simply-footer-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--surface);
+}
+
+.simply-footer-bar::before {
+    content: "Модель";
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.simply-provider {
+    flex: 1 1 auto;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1px solid var(--surface);
+    border-radius: 8px;
+    background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236C5CE7' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color: var(--indigo-dark);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 8px 30px 8px 12px;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.simply-provider:hover {
+    background-color: var(--bg);
+    border-color: var(--indigo);
+}
+
 /* Block: original + result pair */
 .simply-block {
     display: flex;
@@ -228,6 +270,14 @@
 
 .simply-copy:hover { filter: brightness(.93); }
 
+.simply-block__model {
+    margin-top: 8px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+}
+
 /* =========================================================
    3 — SELECTION OVERLAY (#text-adaption-overlay)
    ========================================================= */
@@ -277,6 +327,7 @@
 #ai-chat-floating-button:focus-visible,
 #close-chat-overlay:focus-visible,
 .simply-copy:focus-visible,
+.simply-provider:focus-visible,
 .text-adapter-level:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(108, 92, 231, .45);

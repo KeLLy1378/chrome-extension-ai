@@ -11,20 +11,31 @@ let returnTextEnabled: boolean = false; // переменная для отсл�
 
 
 // функция для отправки запроса к Cloudflare Worker
-async function GetSimplifiedText(level: Level, text: string) {
+async function GetSimplifiedText(
+    level: Level,
+    text: string,
+    provider?: string
+): Promise<{ ok: true, result: string, provider: string, model: string } | { ok: false, error: string }> {
     const promt: string = PROMTS[level];
     const WORKER_URL = 'https://chrome-extension-worker.kelly781337673.workers.dev/';
 
-    const response = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            prompt: promt,
-            text: text
-        })
-    });
+    let response: Response;
+    try {
+        response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: promt,
+                text: text,
+                provider: provider
+            })
+        });
+    } catch (err) {
+        console.error("Не удалось связаться с Worker:", err);
+        return { ok: false, error: "Нет связи с сервером. Проверьте интернет-соединение." };
+    }
 
     if (!response.ok) {
         const errorJson = await response.json().catch(async () => {
@@ -33,10 +44,10 @@ async function GetSimplifiedText(level: Level, text: string) {
         });
         console.log("Status:", response.status);
         console.log("Worker error full:", errorJson);
-        return null;
+        return { ok: false, error: errorJson?.error || "Ошибка сервера. Попробуйте позже." };
     } else {
         const data = await response.json();
-        return data.result;
+        return { ok: true, result: data.result, provider: data.provider, model: data.model };
     }
 }
 
@@ -64,30 +75,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             console.log("Получен запрос на упрощение");
             
-            GetSimplifiedText(message.level, message.text).then((simplifiedText) => {
-                if (simplifiedText === null) {
+            GetSimplifiedText(message.level, message.text, message.provider).then((simplified) => {
+                if (simplified.ok) {
                     sendResponse({
-                        success: false,
-                        error: "Ошибка API: не удалось получить ответ. Проверьте API ключ."
+                        success: true,
+                        result: simplified.result,
+                        provider: simplified.provider,
+                        model: simplified.model
                     });
                 } else {
                     sendResponse({
-                        success: true,
-                        result: simplifiedText
+                        success: false,
+                        error: simplified.error
                     });
                 }
             }).catch((error) => {
                 console.error(error);
                 sendResponse({
                     success: false,
-                    error: "Ошибка API"
+                    error: "Нет связи с сервером. Проверьте интернет-соединение."
                 });
             });
         } catch (error) {
             console.error(error);
             sendResponse({
                 success: false,
-                error: "Ошибка API"
+                error: "Нет связи с сервером. Проверьте интернет-соединение."
             });
         }
         return true;
