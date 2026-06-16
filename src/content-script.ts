@@ -1,18 +1,16 @@
 console.log("Content script loaded");
 
 // тип сообщений Message
-type Message = 
-    | { action: "SIMPLIFY_TEXT", level: Level, apiKey?: string }  // Добавляем apiKey (опциональный)
+type Message =
+    | { action: "SIMPLIFY_TEXT", level: Level, text: string, provider?: string }
     | { action: "SIMPLIFY_RESULT", result: string }
     | { action: "RETURN_ORIGINAL_TEXT" }
     | { action: "GET_SELECTED_TEXT" }
     | { action: "ENABLE_BUTTON" }
-    | { action: "DISABLE_BUTTON" }
-    | { action: "UPDATE_API_KEY", apiKey: string }  // Добавляем новый тип для обновления ключа
-    | { action: "GET_API_KEY" };  // Опционально
+    | { action: "DISABLE_BUTTON" };
 
 // локальное определение типа Level
-type Level = "easy" | "medium" | "hard";
+type Level = "simplify" | "shorten" | "essence";
 
 // глобальная переменная для overlay
 let overlay: HTMLDivElement | null = null;
@@ -21,6 +19,7 @@ let lastSelectedText: string | null = null;
 let chatOverlay: HTMLDivElement | null = null;
 let chatOverlayShadow: ShadowRoot | null = null;
 let chatIconButton: HTMLButtonElement | null = null;
+let selectedProvider: string = 'groq';
 const minTextLength = 200; // минимальная длина текста для упрощения
 
 // Shadow host и root для всего UI расширения
@@ -63,6 +62,13 @@ async function initializeShadowRoot(): Promise<ShadowRoot | null> {
         console.warn('Не удалось загрузить overlay.css into ShadowRoot', err);
     }
 
+    const extraStyle = document.createElement('style');
+    extraStyle.textContent = `
+        .simply-chip__hint { display: none; }
+        .simply-chip:hover .simply-chip__hint { display: block; }
+    `;
+    shadow.appendChild(extraStyle);
+
     shadowRootRef = shadow;
     return shadowRootRef;
 }
@@ -80,6 +86,31 @@ async function getSelectedText(): Promise<string | null> {
     }
 }
 
+function trimPartialWords(text: string): string {
+    let result = text.trim();
+    result = result.replace(/^\S*?\s/, (match) => {
+        return /^[а-яёa-z]/.test(match) ? '' : match;
+    });
+    result = result.replace(/\s\S*$/, (match) => {
+        return /[.!?»)\]]\s*$/.test(match) ? match : '';
+    });
+    return result.trim();
+}
+
+function getPageText(): string {
+    const ignoreTags = ['script', 'style', 'nav', 'header', 'footer',
+                        'button', 'input', 'select', 'textarea', 'menu',
+                        'aside', 'form', 'noscript'];
+
+    const clone = document.body.cloneNode(true) as HTMLElement;
+
+    ignoreTags.forEach(tag => {
+        clone.querySelectorAll(tag).forEach(el => el.remove());
+    });
+
+    return clone.innerText.trim();
+}
+
 // обработчик сообщений от background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "GET_SELECTED_TEXT") {
@@ -87,14 +118,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({text: text});
         });
         return true; // важно для асинхронных операций
-    }
-    if (message.action === "SIMPLIFY_RESULT") {
-        const resultBlock = shadowRootRef?.querySelector("#result") as HTMLDivElement | null;
-        if (resultBlock) {
-            resultBlock.style.display = "block";
-            resultBlock.textContent = message.result;
-        }
-        return true;
     }
 });
 
@@ -107,109 +130,35 @@ async function createOverlay(): Promise<HTMLDivElement> {
     const div = document.createElement('div');
     div.id = 'text-adaption-overlay';
 
-    // устанавливаем HTML структуру overlay
     div.innerHTML = `
-        <div class="text-adapter-title">Упрощение текста</div>
-
         <div class="text-adapter-actions">
-            <select id="simplification-level">
-                <option value="easy">Легкое упрощение</option>
-                <option value="medium">Среднее упрощение</option>
-                <option value="hard">Сильное упрощение</option>
-            </select>
-            <button id="simplify-button" class="text-adapter-button primary">
-                Упростить
-            </button>
-
-            <button id="close-overlay-button" class="text-adapter-button secondary">
-                Закрыть
-            </button>
+            <button class="text-adapter-level" data-level="simplify">Упростить язык</button>
+            <button class="text-adapter-level" data-level="shorten">Сократить</button>
+            <button class="text-adapter-level" data-level="essence">Выжать суть</button>
         </div>
-        <div id="result" style="display:none"></div>
     `;
 
-    // добавляем overlay в shadow root
     shadowRootRef?.appendChild(div);
 
-    // сохраняем ссылку
     overlay = div;
 
-    // загружаем уровень из storage и устанавливаем по умолчанию
-    const select = div.querySelector('#simplification-level') as HTMLSelectElement;
-
-    chrome.storage.local.get('textComplexityLevel', (result) => {
-        const level: Level = (result.textComplexityLevel as Level) || 'easy';
-        if (select) {
-            select.value = level;
-        }
-    });
-
-    select.addEventListener('change', () => {
-        chrome.storage.local.set({ textComplexityLevel: select.value as Level });
-    });
-
-    // добавляем обработчики событий для кнопок и других элементов внутри overlay
-    const simplifyButton = div.querySelector('#simplify-button');
-    const closeButton = div.querySelector('#close-overlay-button');
-
-    if (simplifyButton instanceof HTMLButtonElement) {
-        simplifyButton.addEventListener('click', async (event) => {
+    div.querySelectorAll('.text-adapter-level').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
             event.stopPropagation();
 
-            if (!lastSelectedText) {
-                return;
-            }
+            if (!lastSelectedText) return;
 
             if (lastSelectedText.trim().length < minTextLength) {
                 alert(`Пожалуйста, выделите текст длиной не менее ${minTextLength} символов для упрощения.`);
                 return;
             }
 
-            const selectElement = div.querySelector('#simplification-level') as HTMLSelectElement;
-            const level = selectElement.value as Level;
-
-            // дождёмся, чтобы chatOverlay гарантированно существовал в ShadowRoot
-            await showChatOverlay();
-            
-            appendMessage('user', `${lastSelectedText}`);
-
-            chrome.runtime.sendMessage(
-                {
-                    action: 'SIMPLIFY_TEXT',
-                    text: lastSelectedText,
-                    level: level
-                },
-                (response) => {
-                    if (!response) {
-                        appendMessage('assistant', 'Ошибка: нет ответа от API. Попробуйте ещё раз.');
-                        return;
-                    }
-
-                    if (response.success) {
-                        if (level === 'easy') {
-                            appendMessage('assistant', 'Выбран легкий уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
-                        } else if (level === 'medium') {
-                            appendMessage('assistant', 'Выбран средний уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
-                        } else if (level === 'hard') {
-                            appendMessage('assistant', 'Выбран сильный уровень упрощения. Это может занять некоторое время для больших текстов, пожалуйста, подождите...');
-                        }
-                        setTimeout(() => {
-                            appendMessage('assistant', response.result);
-                        }, 500);
-                    } else {
-                        appendMessage('assistant', `Ошибка: ${response.error}`);
-                    }
-                }
-            );
-        });
-    }
-
-    if (closeButton instanceof HTMLButtonElement) {
-        closeButton.addEventListener('click', (event) => {
-            event.stopPropagation();
+            const level = (btn as HTMLElement).dataset.level as Level;
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            simplifyText(lastSelectedText, level);
             hideOverlay();
         });
-    }
+    });
 
     return div;
 }
@@ -302,14 +251,23 @@ document.addEventListener('mouseup', (event) => {
             return;
         }
 
-        lastSelectedText = text;
+        lastSelectedText = trimPartialWords(text) || text;
         await showOverlayNearSelection();
     }, 100);
 });
 
+document.addEventListener('mousedown', (event) => {
+    if (overlay &&
+        overlay.style.display !== 'none' &&
+        extensionHost &&
+        !event.composedPath().includes(extensionHost)) {
+        hideOverlay();
+    }
+});
 
 
 // фукнция chatOverlay для ответа от ИИ
+
 
 async function createChatOverlay(): Promise<HTMLDivElement> {
     await initializeShadowRoot();
@@ -318,26 +276,20 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
     div.id = 'ai-chat-overlay';
 
     div.innerHTML = `
-        <div class="ai-chat-header">
-            <span>Simply</span>
-
-            <button id="close-chat-overlay">
-                ✕
-            </button>
+        <div class="simply-header">
+            <div class="simply-header-title">
+                <span>Simply</span>
+            </div>
+            <button id="close-chat-overlay">✕</button>
         </div>
 
-        <div id="ai-chat-messages" class="ai-chat-messages"></div>
+        <div id="simply-feed" class="simply-feed"></div>
 
-        <div class="ai-chat-input-container" style="display:none"> <!-- Временно скрываем. Недостаточно проработано -->
-            <input
-                id="ai-chat-input"
-                type="text"
-                placeholder="Напишите сообщение..."
-            />
-
-            <button id="send-chat-message">
-                Отправить
-            </button>
+        <div class="simply-footer-bar">
+            <select id="simply-provider" class="simply-provider">
+                <option value="groq">Groq — gpt-oss-120b</option>
+                <option value="gemini">Gemini — gemini-2.5-flash</option>
+            </select>
         </div>
     `;
 
@@ -350,17 +302,12 @@ async function createChatOverlay(): Promise<HTMLDivElement> {
         });
     }
 
-    const sendButton = div.querySelector('#send-chat-message');
-    const input = div.querySelector('#ai-chat-input') as HTMLInputElement | null;
-
-    if (sendButton instanceof HTMLButtonElement && input) {
-        sendButton.addEventListener('click', () => {
-            const text = input.value.trim();
-            if (!text) return;
-            appendMessage('user', text);
-            input.value = '';
-            // отправляем на background если нужно
-            chrome.runtime.sendMessage({ action: 'CHAT_MESSAGE', text });
+    const providerSelect = div.querySelector('#simply-provider');
+    if (providerSelect instanceof HTMLSelectElement) {
+        providerSelect.value = selectedProvider;
+        providerSelect.addEventListener('change', () => {
+            selectedProvider = providerSelect.value;
+            chrome.storage.local.set({ selectedProvider });
         });
     }
 
@@ -376,29 +323,69 @@ async function showChatOverlay(): Promise<void> {
     }
 
     if (!chatOverlay) return;
+
     chatOverlay.style.display = 'flex';
 }
 
-// функция добавления сообщения в chatOverlay
+const RESULT_LABELS: Record<string, string> = {
+    simplify: 'УПРОЩЁННЫЙ ЯЗЫК',
+    shorten: 'СОКРАЩЕНО',
+    essence: 'СУТЬ',
+};
 
-function appendMessage(
-    role: "user" | "assistant",
-    text: string
-): void {
+function addFeedBlock(originalText: string, level: string): HTMLDivElement {
+    const feed = shadowRootRef?.querySelector('#simply-feed') as HTMLDivElement;
+    const resultLabel = RESULT_LABELS[level] || 'РЕЗУЛЬТАТ';
 
-    const messagesContainer = shadowRootRef?.querySelector('#ai-chat-messages') as HTMLDivElement | null;
+    const block = document.createElement('div');
+    block.className = 'simply-block';
+    block.innerHTML = `
+        <div class="simply-block__original">
+            <span class="simply-label">ОРИГИНАЛ</span>
+            <div class="simply-block__text">${originalText}</div>
+        </div>
+        <div class="simply-block__result">
+            <span class="simply-label">${resultLabel}</span>
+            <div class="simply-block__text">...</div>
+            <button class="simply-copy">Скопировать</button>
+            <div class="simply-block__model"></div>
+        </div>
+    `;
 
-    if (!messagesContainer) {
-        return;
-    }
+    const copyBtn = block.querySelector('.simply-copy') as HTMLButtonElement;
+    copyBtn.addEventListener('click', () => {
+        const text = block.querySelector('.simply-block__result .simply-block__text')?.textContent || '';
+        navigator.clipboard.writeText(text);
+    });
 
-    const message = document.createElement('div');
-    message.classList.add('ai-chat-message');
-    message.classList.add(role);
-    message.textContent = text;
+    feed.appendChild(block);
+    feed.scrollTop = feed.scrollHeight;
 
-    messagesContainer.appendChild(message);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return block;
+}
+
+async function simplifyText(text: string, level: string): Promise<void> {
+    await showChatOverlay();
+    const block = addFeedBlock(text, level);
+    const resultText = block.querySelector('.simply-block__result .simply-block__text') as HTMLDivElement;
+    const modelLabel = block.querySelector('.simply-block__model') as HTMLDivElement;
+
+    chrome.runtime.sendMessage(
+        { action: 'SIMPLIFY_TEXT', text, level, provider: selectedProvider },
+        (response) => {
+            if (response?.success) {
+                resultText.textContent = response.result;
+                if (response?.provider && response?.model) {
+                    const providerName = response.provider === 'gemini' ? 'Gemini' : 'Groq';
+                    modelLabel.textContent = `${providerName} · ${response.model}`;
+                }
+            } else {
+                resultText.textContent = response?.error || 'Не удалось получить ответ.';
+            }
+            const feed = shadowRootRef?.querySelector('#simply-feed') as HTMLDivElement;
+            if (feed) feed.scrollTop = feed.scrollHeight;
+        }
+    );
 }
 
 
@@ -439,21 +426,36 @@ function toggleChatOverlay(): void {
     }
 }
 
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.textComplexityLevel) {
-        const newLevel = changes.textComplexityLevel.newValue as Level;
-        const select = shadowRootRef?.querySelector('#simplification-level') as HTMLSelectElement | null;
-        if (select) {
-            select.value = newLevel;
-        }
-    }
-});
 
 // инициализация кнопки для открытия chatOverlay при загрузке страницы
 (async () => {
     try {
-        chatIconButton = await createChatIconButton();
+        const stored = await chrome.storage.local.get(['showFloatingButton', 'selectedProvider']);
+        const show = stored.showFloatingButton !== false;
+        selectedProvider = (stored.selectedProvider as string) || 'groq';
+        if (show) {
+            chatIconButton = await createChatIconButton();
+        }
     } catch (err) {
         console.warn('Не удалось инициализировать кнопку чата', err);
     }
 })();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !('showFloatingButton' in changes)) return;
+
+    const show = changes.showFloatingButton.newValue !== false;
+
+    if (show) {
+        if (!chatIconButton) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            createChatIconButton().then(btn => { chatIconButton = btn; });
+        } else {
+            chatIconButton.style.display = '';
+        }
+    } else {
+        if (chatIconButton) {
+            chatIconButton.style.display = 'none';
+        }
+    }
+});

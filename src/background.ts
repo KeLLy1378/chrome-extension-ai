@@ -10,50 +10,46 @@ const GetSelectedTextMessage: Message = {action: "GET_SELECTED_TEXT"};
 let returnTextEnabled: boolean = false; // переменная для отслеживания, нужно ли возвращать оригинальный текст
 
 
-// функция для отправки сообщения Groq для упрощения текста
-async function GetSimplifiedText(level: Level, text: string){
+// функция для отправки запроса к Cloudflare Worker
+async function GetSimplifiedText(
+    level: Level,
+    text: string,
+    provider?: string
+): Promise<{ ok: true, result: string, provider: string, model: string } | { ok: false, error: string }> {
     const promt: string = PROMTS[level];
-    const apiGroqKey = await chrome.storage.local.get('apiKey');
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: "POST", // метод POST означает что мы отправляем запрос на сервер, а не просто получаем данные
-        headers: {
-            'Content-Type': 'application/json', // тут мы говорим что используем json в теле запроса
-            'Authorization': `Bearer ${apiGroqKey.apiKey}` // через это мы передаём наш API ключ
-        },
-        body: JSON.stringify({ // через JSON.stringify превращаем объект JSON в строку
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                {
-                    role: 'system',
-                    content: promt
-                },
-                {
-                    role: 'user',
-                    content: `<source>${text}</source>`
-                }
-            ]
-        })
-    });
-    // проверка на случай если что то не так с запросом, чтобы вывелась сама ошибка, а не просто in promise error
-    if (!response.ok){
+    const WORKER_URL = 'https://chrome-extension-worker.kelly781337673.workers.dev/';
+
+    let response: Response;
+    try {
+        response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: promt,
+                text: text,
+                provider: provider
+            })
+        });
+    } catch (err) {
+        console.error("Не удалось связаться с Worker:", err);
+        return { ok: false, error: "Нет связи с сервером. Проверьте интернет-соединение." };
+    }
+
+    if (!response.ok) {
         const errorJson = await response.json().catch(async () => {
-            const text = await response.text();
-            return { raw: text };
+            const t = await response.text();
+            return { raw: t };
         });
         console.log("Status:", response.status);
-        console.log("Groq error full:", errorJson);
-        return null;
-    }
-    else {
-        // если всё хорошо то мы принимает данные и отправляем в console.log
+        console.log("Worker error full:", errorJson);
+        return { ok: false, error: errorJson?.error || "Ошибка сервера. Попробуйте позже." };
+    } else {
         const data = await response.json();
-        console.log(data);
-        let result: string = data.choices[0].message.content;
-        result = result.replace(/^<source>\s*/i, '').replace(/\s*<\/source>$/i, '');
-        console.log(result);
-        return result;
+        return { ok: true, result: data.result, provider: data.provider, model: data.model };
     }
-};
+}
 
 // функция получения текста со страницы
 function getSelectedText(msg: Message, callback: (text: string) => void) { // callback нужен для того, чтобы работать с текстом после его получения, так как получение текста асинхронное
@@ -79,30 +75,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             console.log("Получен запрос на упрощение");
             
-            GetSimplifiedText(message.level, message.text).then((simplifiedText) => {
-                if (simplifiedText === null) {
+            GetSimplifiedText(message.level, message.text, message.provider).then((simplified) => {
+                if (simplified.ok) {
                     sendResponse({
-                        success: false,
-                        error: "Ошибка API: не удалось получить ответ. Проверьте API ключ."
+                        success: true,
+                        result: simplified.result,
+                        provider: simplified.provider,
+                        model: simplified.model
                     });
                 } else {
                     sendResponse({
-                        success: true,
-                        result: simplifiedText
+                        success: false,
+                        error: simplified.error
                     });
                 }
             }).catch((error) => {
                 console.error(error);
                 sendResponse({
                     success: false,
-                    error: "Ошибка API"
+                    error: "Нет связи с сервером. Проверьте интернет-соединение."
                 });
             });
         } catch (error) {
             console.error(error);
             sendResponse({
                 success: false,
-                error: "Ошибка API"
+                error: "Нет связи с сервером. Проверьте интернет-соединение."
             });
         }
         return true;

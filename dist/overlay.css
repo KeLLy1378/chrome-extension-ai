@@ -1,356 +1,334 @@
-/* ========================================
-   OVERLAY ДЛЯ УПРОЩЕНИЯ ТЕКСТА
-   Маленькое меню, которое появляется рядом с выделенным текстом
-   ======================================== */
+/* =========================================================
+   Simply — overlay.css
+   Injected into the extension Shadow Root.
+   Variables on :host (shadow) and :root (plain preview),
+   so the same file works in both contexts.
+   ========================================================= */
 
-#text-adaption-overlay {
-    position: absolute; 
-    /* абсолютное позиционирование - появляется в точке клика рядом с выделенным текстом */
-    
-    display: none; 
-    /* по умолчанию скрыто, показывается через JavaScript при выделении текста */
-    
-    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
-    /* градиентный фон: светло-фиолетовый -> персиковый */
-
-    color: black;
-    /* чёрный текст */
-    
-    padding: 5px 10px;
-    /* внутренний отступ: 5px сверху/снизу, 10px слева/справа */
-    
-    border-radius: 5px;
-    /* закруглённые углы */
-    
-    font-size: 14px;
-    /* размер шрифта */
-    
-    z-index: 10000; 
-    /* высокий слой - будет поверх большинства элементов страницы */
-    
-    cursor: pointer; 
-    /* указатель мыши меняется на "рука" - пользователь понимает, что это кликабельно */
+:host,
+:root {
+    --bg:           #FDFCFF;
+    --surface:      #EEE9FF;
+    --indigo:       #6C5CE7;
+    --indigo-dark:  #3B2A8A;
+    --amber:        #EF9F27;
+    --amber-bg:     #FFF8EE;
+    --amber-border: #FAC775;
+    --muted:        #7A7490;
 }
 
-#text-adaption-overlay .text-adapter-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
+/* =========================================================
+   1 — FLOATING BUTTON
+   ========================================================= */
+
+@keyframes simply-fab-in {
+    from { opacity: 0; scale: .55; }
+    to   { opacity: 1; scale: 1;   }
 }
-
-#text-adaption-overlay .text-adapter-actions select,
-#text-adaption-overlay .text-adapter-actions .text-adapter-button {
-    margin: 0;
-    background-color: #dda96d;
-    color: black;
-    border: none;
-    border-radius: 4px;
-    padding: 4px 10px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-
-/* ========================================
-   ЧАТЕ OVERLAY (БОКОВАЯ ПАНЕЛЬ С ОТВЕТАМИ ИИ)
-   Большая панель справа, которая скользит справа когда открывается
-   ======================================== */
-
-#ai-chat-overlay {
-    position: fixed;
-    /* фиксированное позиционирование - остаётся на месте при скролле */
-    
-    top: 0;
-    right: 0;
-    /* позиция: верхний правый угол экрана */
-    
-    width: 380px;
-    height: 100vh;
-    /* размер: 380px шириной, высота весь экран */
-    
-    background: linear-gradient(180deg, #E8D7FF 0%, #FFE4C4 100%);
-    /* тёмный серо-синий фон (фон чата) */
-    
-    z-index: 999999;
-    /* очень высокий слой - поверх всего на странице */
-    
-    display: none;
-    flex-direction: column;
-    /* по умолчанию скрыто, при открытии используется flexbox колонка (элементы друг над другом) */
-    
-    color: #dda96d;
-    /* оранжевый текст */
-    
-    box-shadow: -4px 0 20px rgba(0,0,0,0.35);
-    /* тень слева от панели - создаёт глубину и отделяет от страницы */
-}
-
-
-/* ========================================
-   ЗАГОЛОВОК ЧАТА
-   "AI Assistant" и кнопка закрытия
-   ======================================== */
-
-.ai-chat-header {
-    display: flex;
-    /* использует flexbox для расположения элементов в ряд */
-    
-    justify-content: space-between;
-    /* раскидывает элементы: "AI Assistant" слева, кнопка закрытия справа */
-    
-    align-items: center;
-    /* выравнивает элементы по вертикали (по центру) */
-    
-    padding: 16px;
-    /* внутренний отступ со всех сторон */
-    
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    /* полутонкая светлая линия снизу - разделитель */
-    
-    font-weight: bold;
-    /* жирный шрифт */
-}
-
-button#close-chat-overlay {
-    background-color: #FF8800;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    outline: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: black;
-    cursor: pointer;
-    transition: box-shadow 0.2s ease;
-}
-
-button#close-chat-overlay:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
-
-
-
-/* ========================================
-   КОНТЕЙНЕР СООБЩЕНИЙ
-   Центральная часть где показываются сообщения пользователя и ИИ
-   ======================================== */
-
-.ai-chat-messages {
-    flex: 1;
-    /* занимает всё оставшееся место в колонке */
-    
-    overflow-y: auto;
-    /* если сообщений много, появляется вертикальная прокрутка */
-    
-    padding: 16px;
-    /* внутренний отступ */
-    
-    display: flex;
-    flex-direction: column;
-    /* сообщения расположены колонкой (одно под другим) */
-    
-    gap: 12px;
-    /* расстояние между сообщениями */
-}
-
-
-/* ========================================
-   ОДНО СООБЩЕНИЕ (базовые стили)
-   Применяется к каждому сообщению в чате
-   ======================================== */
-
-.ai-chat-message {
-    padding: 10px 12px;
-    /* внутренний отступ: 10px по вертикали, 12px по горизонтали */
-    
-    border-radius: 10px;
-    /* скруглённые углы - как в обычных мессенджерах */
-    
-    white-space: pre-wrap;
-    /* переносит текст правильно, сохраняя пробелы и переносы строк */
-    
-    line-height: 1.4;
-    /* расстояние между строками текста - 1.4 от размера шрифта */
-    
-    max-width: 85%;
-    /* сообщение не занимает всю ширину панели, максимум 85% */
-}
-
-
-/* ========================================
-   СООБЩЕНИЕ ОТ ПОЛЬЗОВАТЕЛЯ
-   Синее сообщение справа
-   ======================================== */
-
-.ai-chat-message.user {
-    background: #000000;
-    /* чёрный фон */
-    
-    align-self: flex-end;
-    /* выравнивание справа (пользовательские сообщения справа, как в ватсапе) */
-}
-
-
-/* ========================================
-   СООБЩЕНИЕ ОТ ИИ ПОМОЩНИКА
-   Серое сообщение слева
-   ======================================== */
-
-.ai-chat-message.assistant {
-    background: #A100FF;
-    /* серый фон */
-    
-    align-self: flex-start;
-    /* выравнивание слева (сообщения ИИ слева) */
-}
-
-
-/* ========================================
-   КОНТЕЙНЕР ДЛЯ ВВОДА СООБЩЕНИЯ
-   Поле ввода + кнопка отправки внизу
-   ======================================== */
-
-.ai-chat-input-container {
-    display: flex;
-    /* элементы в ряд (input и кнопка рядом) */
-    
-    gap: 8px;
-    /* расстояние между input'ом и кнопкой */
-    
-    padding: 12px;
-    /* внутренний отступ */
-    
-    border-top: 1px solid rgba(255,255,255,0.1);
-    /* светлая линия сверху - разделитель */
-}
-
-
-/* ========================================
-   ПОЛЕ ВВОДА ТЕКСТА
-   Где пользователь пишет сообщения
-   ======================================== */
-
-#ai-chat-input {
-    flex: 1;
-    /* занимает всё оставшееся место (слева от кнопки) */
-    
-    padding: 10px;
-    /* внутренний отступ */
-    
-    border-radius: 8px;
-    /* скруглённые углы */
-    
-    border: none;
-    /* без границы */
-    
-    outline: none;
-    /* убирает голубой обвод при фокусе (по умолчанию в браузерах) */
-}
-
-
-/* ========================================
-   ПЛАВАЮЩАЯ КНОПКА ДЛЯ ОТКРЫТИЯ ЧАТА
-   Синяя кнопка "Chat" справа внизу на странице
-   ======================================== */
 
 #ai-chat-floating-button {
     position: fixed;
-    /* фиксированное позиционирование - остаётся на месте при скролле */
-    
     right: 24px;
-    bottom: 70%;
-    /* позиция: 24px от правого края, примерно посередине высоты */
-    
-    width: 56px;
-    height: 56px;
-    /* размер: 100px ширина, 56px высота */
-    
-    border-radius: 60%;
-    /* слегка скруглённые углы */
-    
+    top: 50%;
+    transform: translateY(-50%);   /* vertical centering — JS must not override */
+    width: 52px;
+    height: 52px;
     border: none;
-    /* без границы */
-    
-    background: #FF8800;
-    /* оранжевый фон (как и сообщения пользователя) */
-    
-    color: white;
-    /* белый текст "Chat" */
-    
-    font-size: 24px;
-    /* размер текста кнопки */
-    
+    border-radius: 50%;
+    background: var(--indigo);
+    color: #FFFFFF;
+    font: 500 18px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -.01em;
     cursor: pointer;
-    /* указатель мыши "рука" */
-    
-    z-index: 999999;
-    /* очень высокий слой */
-    
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    /* тень под кнопкой - выглядит объёмно */
-    
-    transition: transform 0.2s ease, opacity 0.2s ease;
-    /* плавная анимация при наведении: 0.2 секунды, размер и прозрачность */
-    
-    opacity: 0.7;
-    /* чуть прозрачная по умолчанию (70% непрозрачности) */
+    z-index: 2147483646;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Three-layer shadow:
+       1) purple glow  — visible on light backgrounds, gives branded feel
+       2) neutral drop — separates from dark backgrounds
+       3) inset ring   — thin glass edge, readable on any bg colour          */
+    box-shadow:
+        0 4px 16px rgba(108, 92, 231, .45),
+        0 1px 4px  rgba(0,   0,   0,   .12),
+        inset 0 0 0 1.5px rgba(255, 255, 255, .20);
+
+    /* scale is an independent property — composites with transform above */
+    transition: background-color .15s ease,
+                scale           .22s cubic-bezier(.34, 1.56, .64, 1),
+                box-shadow      .15s ease;
+
+    animation: simply-fab-in .4s cubic-bezier(.34, 1.56, .64, 1) both;
 }
-
-
-/* ========================================
-   ПЛАВАЮЩАЯ КНОПКА ПРИ НАВЕДЕНИИ МЫШИ
-   Кнопка становится ярче и немного больше
-   ======================================== */
 
 #ai-chat-floating-button:hover {
-    transform: scale(1.08);
-    /* увеличивает кнопку на 8% (1.08 = 108% от оригинального размера) */
-    
-    opacity: 1;
-    /* становится полностью непрозрачной (100%) */
+    background: var(--indigo-dark);
+    scale: 1.1;
+    box-shadow:
+        0 8px 24px rgba(108, 92, 231, .55),
+        0 2px 6px  rgba(0,   0,   0,   .14),
+        inset 0 0 0 1.5px rgba(255, 255, 255, .20);
 }
 
-/* Preview helper classes для overlay.html */
-.preview-open {
-    position: static !important;
-    display: inline-block !important;
-    width: auto !important;
-    max-width: 600px !important;
+#ai-chat-floating-button:active {
+    scale: .92;
+    box-shadow:
+        0 2px 8px rgba(108, 92, 231, .35),
+        inset 0 0 0 1.5px rgba(255, 255, 255, .20);
 }
 
-.preview-flex {
-    display: flex !important;
+/* =========================================================
+   2 — SIDEBAR (#ai-chat-overlay)
+   ========================================================= */
+
+#ai-chat-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    height: 100vh;
+    background: var(--bg);
+    border-left: 1px solid var(--surface);
+    z-index: 2147483647;
+    display: none;                 /* JS sets display:flex to open */
+    flex-direction: column;
+    color: var(--indigo-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
 }
 
-.preview-chat-row {
-    display: flex !important;
-    gap: 18px !important;
-    align-items: flex-start !important;
-    flex-wrap: wrap !important;
+#ai-chat-overlay,
+#ai-chat-overlay * { box-sizing: border-box; }
+
+/* Header */
+.simply-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--surface);
 }
 
-.preview-chat-button {
-    position: static !important;
-    margin: 18px 0 !important;
-    width: auto !important;
-    height: auto !important;
-    padding: 12px 22px !important;
-    font-size: 18px !important;
+.simply-logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--indigo-dark);
 }
 
-.preview-chat-overlay {
-    position: static !important;
-    display: flex !important;
-    width: 420px !important;
-    height: 360px !important;
-    flex-direction: column !important;
-    margin-top: 18px !important;
+.simply-logo__mark {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: var(--indigo);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.ai-chat-header{
-    font-size: 40px !important;
+#close-chat-overlay {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    border: none;
+    border-radius: 50%;
+    background: var(--amber);
+    color: #FFFFFF;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter .15s ease;
+}
+
+#close-chat-overlay:hover { filter: brightness(.93); }
+
+/* Feed */
+#simply-feed {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#simply-feed::-webkit-scrollbar       { width: 8px; }
+#simply-feed::-webkit-scrollbar-thumb { background: var(--surface); border-radius: 8px; }
+#simply-feed::-webkit-scrollbar-track { background: transparent; }
+
+/* Footer bar — provider selector */
+.simply-footer-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--surface);
+}
+
+.simply-footer-bar::before {
+    content: "Модель";
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.simply-provider {
+    flex: 1 1 auto;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1px solid var(--surface);
+    border-radius: 8px;
+    background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236C5CE7' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color: var(--indigo-dark);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 8px 30px 8px 12px;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.simply-provider:hover {
+    background-color: var(--bg);
+    border-color: var(--indigo);
+}
+
+/* Block: original + result pair */
+.simply-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.simply-block__original {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 12px 14px;
+}
+
+.simply-block__result {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+}
+
+.simply-label {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.simply-block__text {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.55;
+    color: var(--indigo-dark);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.simply-copy {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amber);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: filter .15s ease;
+}
+
+.simply-copy:hover { filter: brightness(.93); }
+
+.simply-block__model {
+    margin-top: 8px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+/* =========================================================
+   3 — SELECTION OVERLAY (#text-adaption-overlay)
+   ========================================================= */
+
+#text-adaption-overlay {
+    position: absolute;
+    z-index: 2147483647;
+    display: none;                 /* JS shows it near the selection */
+    padding: 6px;
+    background: var(--bg);
+    border: 1px solid var(--surface);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(59, 42, 138, .15);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#text-adaption-overlay,
+#text-adaption-overlay * { box-sizing: border-box; }
+
+.text-adapter-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.text-adapter-level {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: var(--surface);
+    color: var(--indigo);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.text-adapter-level:hover  { background: var(--indigo);      color: #FFFFFF; }
+.text-adapter-level:active { background: var(--indigo-dark); color: #FFFFFF; }
+
+/* =========================================================
+   Focus ring
+   ========================================================= */
+
+#ai-chat-floating-button:focus-visible,
+#close-chat-overlay:focus-visible,
+.simply-copy:focus-visible,
+.simply-provider:focus-visible,
+.text-adapter-level:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, .45);
 }
